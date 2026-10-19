@@ -30,7 +30,7 @@ public sealed class RefreshTokenHandler : IRequestHandler<RefreshTokenRequest, A
             .Include(s => s.Account)
             .Where(s => s.LoggedOutAt == null && s.ExpiresAt > DateTime.UtcNow)
             .ToListAsync(ct);
-            
+
         LoginSession? validSession = null;
         foreach (var s in sessions)
         {
@@ -42,10 +42,10 @@ public sealed class RefreshTokenHandler : IRequestHandler<RefreshTokenRequest, A
         }
 
         if (validSession == null)
-            return ApiResponse<LoginResponse>.Fail("Refresh token không h?p l? ho?c ð? h?t h?n.");
+            return ApiResponse<LoginResponse>.Fail("Refresh token khï¿½ng h?p l? ho?c ï¿½? h?t h?n.");
 
         if (validSession.Account.Status != AccountStatus.Active)
-            return ApiResponse<LoginResponse>.Fail("Tài kho?n không ho?t ð?ng.");
+            return ApiResponse<LoginResponse>.Fail("Tï¿½i kho?n khï¿½ng ho?t ï¿½?ng.");
 
         // Revoke old session
         validSession.LoggedOutAt = DateTime.UtcNow;

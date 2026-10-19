@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Library.Modules.Core.Identity.Features.ManageUsers;
 
-public sealed class ManageUsersHandler : 
+public sealed class ManageUsersHandler :
     IRequestHandler<GetUsersRequest, ApiResponse<GetUsersResult>>,
     IRequestHandler<ChangeRoleRequest, ApiResponse<bool>>,
     IRequestHandler<ChangeStatusRequest, ApiResponse<bool>>
@@ -29,8 +29,8 @@ public sealed class ManageUsersHandler :
         if (!string.IsNullOrWhiteSpace(request.Keyword))
         {
             var kw = request.Keyword.ToLower().Trim();
-            query = query.Where(a => a.Username.ToLower().Contains(kw) || 
-                                     a.FullName.ToLower().Contains(kw) || 
+            query = query.Where(a => a.Username.ToLower().Contains(kw) ||
+                                     a.FullName.ToLower().Contains(kw) ||
                                      a.Email.ToLower().Contains(kw));
         }
 

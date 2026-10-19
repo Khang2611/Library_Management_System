@@ -1,3 +1,4 @@
+using Library.Modules.Core.Catalog.Data;
 using Library.Modules.Core.Identity.Data;
 using Microsoft.EntityFrameworkCore;
 
@@ -13,6 +14,13 @@ public class AppDbContext : DbContext
 
     // ── Các module khác (Catalog, Circulation, Billing, Notifications...) ──────
     // Thành viên phụ trách từng module sẽ tự bổ sung DbSet tương ứng tại đây khi thêm module.
+    // ── Catalog ─────────────────────────────────────────
+    public DbSet<Book> Books => Set<Book>();
+    public DbSet<Author> Authors => Set<Author>();
+    public DbSet<Category> Categories => Set<Category>();
+    public DbSet<BookAuthor> BookAuthors => Set<BookAuthor>();
+    public DbSet<BookCategory> BookCategories => Set<BookCategory>();
+    public DbSet<BookCopy> BookCopies => Set<BookCopy>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
         => modelBuilder.ApplyConfigurationsFromAssembly(typeof(AppDbContext).Assembly);
