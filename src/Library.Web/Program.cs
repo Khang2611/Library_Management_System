@@ -112,6 +112,18 @@ ManageCopiesEndpoint.Map(app);
 Library.Modules.Core.Catalog.Features.ManageAuthors.ManageAuthorsEndpoint.Map(app);
 Library.Modules.Core.Catalog.Features.ManageCategories.ManageCategoriesEndpoint.Map(app);
 
+// ── Circulation ───────────────────────────────────────────────────────────────
+Library.Modules.Core.Circulation.Features.BorrowBook.BorrowBookEndpoint.Map(app);
+Library.Modules.Core.Circulation.Features.ReturnBook.ReturnBookEndpoint.Map(app);
+Library.Modules.Core.Circulation.Features.ReserveBook.ReserveBookEndpoint.Map(app);
+Library.Modules.Core.Circulation.Features.RequestRenewal.RequestRenewalEndpoint.Map(app);
+Library.Modules.Core.Circulation.Features.ApproveRenewal.ApproveRenewalEndpoint.Map(app);
+Library.Modules.Core.Circulation.Features.GetMyLoans.GetMyLoansEndpoint.Map(app);
+Library.Modules.Core.Circulation.Features.CancelReservation.CancelReservationEndpoint.Map(app);
+Library.Modules.Core.Circulation.Features.ReportIncident.ReportIncidentEndpoint.Map(app);
+Library.Modules.Core.Circulation.Features.GetAllLoans.GetAllLoansEndpoint.Map(app);
+Library.Modules.Core.Circulation.Features.GetAllReservations.GetAllReservationsEndpoint.Map(app);
+
 // ── Database Schema & Seed Initializer ────────────────────────────────────────
 await Library.Web.DbInitializer.InitializeAsync(app);
 
