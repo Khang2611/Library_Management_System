@@ -1,4 +1,5 @@
 using Library.Modules.Core.Catalog.Data;
+using Library.Modules.Core.Circulation.Data;
 using Library.Modules.Core.Identity.Data;
 using Microsoft.EntityFrameworkCore;
 
@@ -21,6 +22,13 @@ public class AppDbContext : DbContext
     public DbSet<BookAuthor> BookAuthors => Set<BookAuthor>();
     public DbSet<BookCategory> BookCategories => Set<BookCategory>();
     public DbSet<BookCopy> BookCopies => Set<BookCopy>();
+
+    // ── Circulation ─────────────────────────────────────
+    public DbSet<Reservation> Reservations => Set<Reservation>();
+    public DbSet<LoanSlip> LoanSlips => Set<LoanSlip>();
+    public DbSet<LoanSlipDetail> LoanSlipDetails => Set<LoanSlipDetail>();
+    public DbSet<Renewal> Renewals => Set<Renewal>();
+    public DbSet<Incident> Incidents => Set<Incident>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
         => modelBuilder.ApplyConfigurationsFromAssembly(typeof(AppDbContext).Assembly);
