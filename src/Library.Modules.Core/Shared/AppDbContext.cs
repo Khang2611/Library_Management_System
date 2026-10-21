@@ -1,3 +1,4 @@
+using Library.Modules.Core.Billing.Data;
 using Library.Modules.Core.Catalog.Data;
 using Library.Modules.Core.Circulation.Data;
 using Library.Modules.Core.Identity.Data;
@@ -29,6 +30,10 @@ public class AppDbContext : DbContext
     public DbSet<LoanSlipDetail> LoanSlipDetails => Set<LoanSlipDetail>();
     public DbSet<Renewal> Renewals => Set<Renewal>();
     public DbSet<Incident> Incidents => Set<Incident>();
+
+    // ── Billing ─────────────────────────────────────────
+    public DbSet<Fine> Fines => Set<Fine>();
+    public DbSet<FinePayment> FinePayments => Set<FinePayment>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
         => modelBuilder.ApplyConfigurationsFromAssembly(typeof(AppDbContext).Assembly);
