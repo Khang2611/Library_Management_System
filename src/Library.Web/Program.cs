@@ -8,6 +8,8 @@ using Library.Modules.Core.Identity.Features.UpdateProfile;
 using Library.Modules.Core.Catalog.Features.AddBook;
 using Library.Modules.Core.Catalog.Features.SearchBook;
 using Library.Modules.Core.Catalog.Features.ManageCopies;
+using Library.Modules.Core.Billing.Features.IssueFine;
+using Library.Modules.Core.Billing.Features.PayFine;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
@@ -123,6 +125,12 @@ Library.Modules.Core.Circulation.Features.CancelReservation.CancelReservationEnd
 Library.Modules.Core.Circulation.Features.ReportIncident.ReportIncidentEndpoint.Map(app);
 Library.Modules.Core.Circulation.Features.GetAllLoans.GetAllLoansEndpoint.Map(app);
 Library.Modules.Core.Circulation.Features.GetAllReservations.GetAllReservationsEndpoint.Map(app);
+
+// ── Billing ───────────────────────────────────────────────────────────────────
+IssueFineEndpoint.Map(app);
+PayFineEndpoint.Map(app);
+Library.Modules.Core.Billing.Features.GetMyFines.GetMyFinesEndpoint.Map(app);
+Library.Modules.Core.Billing.Features.GetAllFines.GetAllFinesEndpoint.Map(app);
 
 // ── Database Schema & Seed Initializer ────────────────────────────────────────
 await Library.Web.DbInitializer.InitializeAsync(app);
