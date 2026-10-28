@@ -18,5 +18,7 @@ public record LoanDetailDto(
     DateOnly DueDate,
     DateOnly? ReturnedDate,
     string Status,
-    int RenewalsCount
+    int RenewalsCount,
+    string? BookTitle = null,
+    string? Barcode = null
 );
