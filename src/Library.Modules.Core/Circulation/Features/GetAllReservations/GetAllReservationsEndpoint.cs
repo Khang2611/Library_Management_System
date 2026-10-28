@@ -9,7 +9,7 @@ public static class GetAllReservationsEndpoint
 {
     public static IEndpointRouteBuilder Map(IEndpointRouteBuilder app)
     {
-        app.MapGet("/api/circulation/reservations", async (int? status, int page, int pageSize, IMediator mediator, CancellationToken ct) =>
+        app.MapGet("/api/circulation/reservations", async (int? status, IMediator mediator, CancellationToken ct, int page = 1, int pageSize = 10) =>
             Results.Ok(await mediator.Send(new GetAllReservationsRequest(status, page, pageSize), ct)))
             .WithTags("Circulation Admin")
             .WithSummary("Get all reservations (Staff only)")
