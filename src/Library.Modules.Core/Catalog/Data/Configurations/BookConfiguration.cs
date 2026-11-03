@@ -7,15 +7,46 @@ public class BookConfiguration : IEntityTypeConfiguration<Book>
 {
     public void Configure(EntityTypeBuilder<Book> builder)
     {
-        builder.ToTable("Books");
+        builder.ToTable("Books", t =>
+        {
+            t.HasCheckConstraint(
+                "CK_Books_PublishedYear",
+                "[PublishedYear] IS NULL OR ([PublishedYear] BETWEEN 1000 AND 2100)");
+
+            t.HasCheckConstraint(
+                "CK_Books_PageCount",
+                "[PageCount] IS NULL OR [PageCount] > 0");
+
+            t.HasCheckConstraint(
+                "CK_Books_BookValue",
+                "[BookValue] IS NULL OR [BookValue] >= 0");
+
+            t.HasCheckConstraint(
+                "CK_Books_Status",
+                "[Status] IN (N'Active', N'Inactive')");
+        });
+
         builder.HasKey(b => b.Id);
 
-        builder.Property(b => b.Isbn).HasMaxLength(20);
-        builder.Property(b => b.Title).HasMaxLength(255).IsRequired();
-        builder.Property(b => b.Description).HasColumnType("nvarchar(max)");
-        builder.Property(b => b.Publisher).HasMaxLength(200);
-        builder.Property(b => b.Language).HasMaxLength(50);
-        builder.Property(b => b.CoverImageUrl).HasMaxLength(500);
+        builder.Property(b => b.Isbn)
+            .IsUnicode(false)
+            .HasMaxLength(20);
+
+        builder.Property(b => b.Title)
+            .HasMaxLength(500)
+            .IsRequired();
+
+        builder.Property(b => b.Description)
+            .HasColumnType("nvarchar(max)");
+
+        builder.Property(b => b.Publisher)
+            .HasMaxLength(200);
+
+        builder.Property(b => b.Language)
+            .HasMaxLength(50);
+
+        builder.Property(b => b.CoverImageUrl)
+            .HasMaxLength(500);
 
         builder.Property(b => b.BookValue)
             .HasPrecision(18, 2);
@@ -28,22 +59,13 @@ public class BookConfiguration : IEntityTypeConfiguration<Book>
         builder.Property(b => b.CreatedAt)
             .HasDefaultValueSql("SYSDATETIME()");
 
-        builder.HasIndex(b => b.Isbn).IsUnique().HasFilter("[ISBN] IS NOT NULL");
+        builder.Property(b => b.RowVersion)
+            .IsRowVersion();
 
-        // CK_Sach_NamXuatBan: 1000 <= PublishedYear <= 2100
-        builder.ToTable(t => t.HasCheckConstraint(
-            "CK_Books_PublishedYear",
-            "[PublishedYear] IS NULL OR ([PublishedYear] BETWEEN 1000 AND 2100)"));
-
-        // CK_Sach_SoTrang
-        builder.ToTable(t => t.HasCheckConstraint(
-            "CK_Books_PageCount",
-            "[PageCount] IS NULL OR [PageCount] > 0"));
-
-        // CK_Sach_GiaTriSach
-        builder.ToTable(t => t.HasCheckConstraint(
-            "CK_Books_BookValue",
-            "[BookValue] IS NULL OR [BookValue] >= 0"));
+        builder.HasIndex(b => b.Isbn)
+            .IsUnique()
+            .HasDatabaseName("IX_Books_Isbn")
+            .HasFilter("[Isbn] IS NOT NULL");
 
         builder.HasMany(b => b.BookAuthors)
             .WithOne(ba => ba.Book)

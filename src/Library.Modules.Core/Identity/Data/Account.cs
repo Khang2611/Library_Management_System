@@ -14,9 +14,13 @@ public class Account
     public AccountRole Role { get; set; }
     public AccountStatus Status { get; set; } = AccountStatus.Active;
 
-    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public DateTime? DeactivatedAt { get; set; }
     public DateTime? LastLoginAt { get; set; }
+    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+    public int? CreatedBy { get; set; }
+    public DateTime? UpdatedAt { get; set; }
+    public int? UpdatedBy { get; set; }
+    public byte[] RowVersion { get; set; } = [];
 
     // Navigation (within Identity context only)
     public ICollection<LoginSession> LoginSessions { get; set; } = [];

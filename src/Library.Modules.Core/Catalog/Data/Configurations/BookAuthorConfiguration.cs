@@ -10,6 +10,9 @@ public class BookAuthorConfiguration : IEntityTypeConfiguration<BookAuthor>
         builder.ToTable("BookAuthors");
         builder.HasKey(ba => new { ba.BookId, ba.AuthorId });
 
+        builder.HasIndex(ba => ba.AuthorId)
+            .HasDatabaseName("IX_BookAuthors_AuthorId");
+
         builder.HasOne(ba => ba.Book)
             .WithMany(b => b.BookAuthors)
             .HasForeignKey(ba => ba.BookId)

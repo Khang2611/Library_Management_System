@@ -8,7 +8,8 @@ namespace Library.Modules.Core.Catalog.Features.ManageCopies;
 public record AddCopyRequest(
     int BookId,
     string Barcode,
-    string? Location,
-    DateOnly? AcquiredDate,
+    int? LocationId = null,
+    string? Location = null,
+    DateOnly? AcquiredDate = null,
     CopyCondition Condition = CopyCondition.Good
 ) : IRequest<ApiResponse<int>>;

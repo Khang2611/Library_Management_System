@@ -8,17 +8,31 @@ public class LoanSlipDetailConfiguration : IEntityTypeConfiguration<LoanSlipDeta
 {
     public void Configure(EntityTypeBuilder<LoanSlipDetail> builder)
     {
-        builder.ToTable("LoanSlipDetails");
+        builder.ToTable("LoanSlipDetails", t =>
+        {
+            t.HasCheckConstraint("CK_LoanSlipDetails_Status", "[Status] IN (N'Borrowing', N'Returned', N'Lost', N'Damaged')");
+        });
+
         builder.HasKey(d => d.Id);
 
         builder.Property(d => d.Notes).HasMaxLength(500);
+
         builder.Property(d => d.Status)
             .HasConversion<string>()
             .HasMaxLength(20)
             .HasDefaultValue(LoanDetailStatus.Borrowing);
 
-        // UQ_ChiTietPhieuMuon: (LoanSlipId, BookCopyId)
-        builder.HasIndex(d => new { d.LoanSlipId, d.BookCopyId }).IsUnique();
+        // UQ_LoanSlipDetails_LoanSlipId_BookCopyId: (LoanSlipId, BookCopyId)
+        builder.HasIndex(d => new { d.LoanSlipId, d.BookCopyId })
+            .IsUnique()
+            .HasDatabaseName("UQ_LoanSlipDetails_LoanSlipId_BookCopyId");
+
+        // Indexes
+        builder.HasIndex(d => d.BookCopyId)
+            .HasDatabaseName("IX_LoanSlipDetails_BookCopyId");
+
+        builder.HasIndex(d => d.Status)
+            .HasDatabaseName("IX_LoanSlipDetails_Status");
 
         // Cross-context FK → Catalog.BookCopy
         builder.HasOne<BookCopy>()

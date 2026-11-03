@@ -20,6 +20,7 @@ public class Incident
     public decimal CompensationAmount { get; set; } = 0;
     public DateTime RecordedAt { get; set; } = DateTime.UtcNow;
     public IncidentStatus Status { get; set; } = IncidentStatus.Recorded;
+    public DateTime? ResolvedAt { get; set; }
 }
 
 public enum IncidentType { Lost, Damaged }

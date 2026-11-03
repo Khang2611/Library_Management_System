@@ -16,5 +16,8 @@ public class AuthorConfiguration : IEntityTypeConfiguration<Author>
 
         builder.Property(a => a.Biography)
             .HasColumnType("nvarchar(max)");
+
+        builder.Property(a => a.CreatedAt)
+            .HasDefaultValueSql("SYSDATETIME()");
     }
 }

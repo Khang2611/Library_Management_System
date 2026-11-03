@@ -8,7 +8,11 @@ public class NotificationConfiguration : IEntityTypeConfiguration<Notification>
 {
     public void Configure(EntityTypeBuilder<Notification> builder)
     {
-        builder.ToTable("Notifications");
+        builder.ToTable("Notifications", t =>
+        {
+            t.HasCheckConstraint("CK_Notifications_NotificationType", "[NotificationType] IN (N'Reserve', N'Borrow', N'Return', N'Fine', N'System')");
+        });
+
         builder.HasKey(n => n.Id);
 
         builder.Property(n => n.Title).HasMaxLength(200).IsRequired();
@@ -20,10 +24,17 @@ public class NotificationConfiguration : IEntityTypeConfiguration<Notification>
             .HasConversion<string>()
             .HasMaxLength(30);
 
-        // Cross-context FK → Identity.Account
+        // Indexes
+        builder.HasIndex(n => n.AccountId)
+            .HasDatabaseName("IX_Notifications_AccountId");
+
+        builder.HasIndex(n => new { n.AccountId, n.IsRead })
+            .HasDatabaseName("IX_Notifications_IsRead");
+
+        // Cross-context FK → Identity.Account (SQL: ON DELETE NO ACTION)
         builder.HasOne<Account>()
             .WithMany()
             .HasForeignKey(n => n.AccountId)
-            .OnDelete(DeleteBehavior.Cascade);
+            .OnDelete(DeleteBehavior.Restrict);
     }
 }

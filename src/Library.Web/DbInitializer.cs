@@ -84,7 +84,26 @@ public static class DbInitializer
                 logger.LogInformation("Initial accounts seeded successfully.");
             }
 
-            // 2. Seed Books from books_seed.json if empty
+            // 2. Seed Locations if empty
+            var locations = await db.Locations.ToListAsync();
+            if (locations.Count == 0)
+            {
+                logger.LogInformation("Seeding initial shelf locations (He Toa Do Vi Tri Ke 3D)...");
+                locations =
+                [
+                    new Location { Aisle = "Khu A", Shelf = "Kệ 1", RowLevel = 1, MaxCapacity = 50, CreatedAt = DateTime.UtcNow },
+                    new Location { Aisle = "Khu A", Shelf = "Kệ 1", RowLevel = 2, MaxCapacity = 50, CreatedAt = DateTime.UtcNow },
+                    new Location { Aisle = "Khu A", Shelf = "Kệ 2", RowLevel = 1, MaxCapacity = 50, CreatedAt = DateTime.UtcNow },
+                    new Location { Aisle = "Khu A", Shelf = "Kệ 2", RowLevel = 2, MaxCapacity = 50, CreatedAt = DateTime.UtcNow },
+                    new Location { Aisle = "Khu B", Shelf = "Kệ 1", RowLevel = 1, MaxCapacity = 50, CreatedAt = DateTime.UtcNow },
+                    new Location { Aisle = "Khu B", Shelf = "Kệ 2", RowLevel = 1, MaxCapacity = 50, CreatedAt = DateTime.UtcNow }
+                ];
+                db.Locations.AddRange(locations);
+                await db.SaveChangesAsync();
+                logger.LogInformation("Initial shelf locations seeded successfully.");
+            }
+
+            // 3. Seed Books from books_seed.json if empty
             if (!await db.Books.AnyAsync())
             {
                 logger.LogInformation("Checking for books_seed.json...");
@@ -132,7 +151,7 @@ public static class DbInitializer
                         // Ensure Author
                         if (!string.IsNullOrWhiteSpace(authorName) && !authorDict.TryGetValue(authorName, out var author))
                         {
-                            author = new Author { Name = authorName, Biography = $"Tác giả {authorName}" };
+                            author = new Author { Name = authorName, Biography = $"Tác giả {authorName}", CreatedAt = DateTime.UtcNow };
                             db.Authors.Add(author);
                             authorDict[authorName] = author;
                         }
@@ -165,17 +184,20 @@ public static class DbInitializer
                         // Add copies
                         if (element.TryGetProperty("Copies", out var copiesProp) && copiesProp.ValueKind == JsonValueKind.Array)
                         {
-                            var shelfIndex = 1;
+                            var shelfIndex = 0;
                             foreach (var copyElem in copiesProp.EnumerateArray())
                             {
                                 var barcode = copyElem.GetProperty("Barcode").GetString() ?? Guid.NewGuid().ToString("N")[..8];
+                                var copyLoc = locations.Count > 0 ? locations[shelfIndex % locations.Count] : null;
                                 book.Copies.Add(new BookCopy
                                 {
                                     Barcode = barcode,
-                                    Location = $"Kệ A{shelfIndex}-01",
+                                    Location = copyLoc,
+                                    LocationId = copyLoc?.Id,
                                     AcquiredDate = DateOnly.FromDateTime(DateTime.Today),
                                     Condition = CopyCondition.Good,
-                                    Status = CopyStatus.Available
+                                    Status = CopyStatus.Available,
+                                    CreatedAt = DateTime.UtcNow
                                 });
                                 shelfIndex++;
                             }
@@ -183,13 +205,16 @@ public static class DbInitializer
                         else
                         {
                             // default 2 copies
+                            var defaultLoc = locations.FirstOrDefault();
                             book.Copies.Add(new BookCopy
                             {
                                 Barcode = $"LIB-{Random.Shared.Next(1000, 9999)}-01",
-                                Location = "Kệ A1-01",
+                                Location = defaultLoc,
+                                LocationId = defaultLoc?.Id,
                                 AcquiredDate = DateOnly.FromDateTime(DateTime.Today),
                                 Condition = CopyCondition.Good,
-                                Status = CopyStatus.Available
+                                Status = CopyStatus.Available,
+                                CreatedAt = DateTime.UtcNow
                             });
                         }
 

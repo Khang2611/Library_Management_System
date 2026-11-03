@@ -14,9 +14,11 @@ public class LoanSlipDetail
     public int BookCopyId { get; set; }
 
     public DateOnly? ActualReturnDate { get; set; }
+    public LoanDetailStatus Status { get; set; } = LoanDetailStatus.Borrowing;
     public string? Notes { get; set; }
 
-    public LoanDetailStatus Status { get; set; } = LoanDetailStatus.Borrowing;
+    public DateTime? UpdatedAt { get; set; }
+    public int? UpdatedBy { get; set; }
 
     // Navigation within Circulation context
     public ICollection<Renewal> Renewals { get; set; } = [];

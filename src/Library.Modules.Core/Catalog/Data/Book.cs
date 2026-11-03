@@ -15,6 +15,10 @@ public class Book
 
     public BookStatus Status { get; set; } = BookStatus.Active;
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+    public int? CreatedBy { get; set; }
+    public DateTime? UpdatedAt { get; set; }
+    public int? UpdatedBy { get; set; }
+    public byte[] RowVersion { get; set; } = [];
 
     // Navigation (within Catalog context)
     public ICollection<BookAuthor> BookAuthors { get; set; } = [];

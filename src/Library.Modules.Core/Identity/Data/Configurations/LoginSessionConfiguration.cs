@@ -7,13 +7,18 @@ public class LoginSessionConfiguration : IEntityTypeConfiguration<LoginSession>
 {
     public void Configure(EntityTypeBuilder<LoginSession> builder)
     {
-        builder.ToTable("LoginSessions");
+        builder.ToTable("LoginSessions", t =>
+        {
+            t.HasCheckConstraint("CK_LoginSessions_ExpiresAt", "[ExpiresAt] > [LoggedInAt]");
+        });
+
         builder.HasKey(ls => ls.Id);
 
         builder.Property(ls => ls.RefreshTokenHash)
             .HasMaxLength(255);
 
         builder.Property(ls => ls.IpAddress)
+            .IsUnicode(false)
             .HasMaxLength(45); // IPv6 max
 
         builder.Property(ls => ls.UserAgent)
@@ -22,15 +27,15 @@ public class LoginSessionConfiguration : IEntityTypeConfiguration<LoginSession>
         builder.Property(ls => ls.LoggedInAt)
             .HasDefaultValueSql("SYSDATETIME()");
 
-        // CK_PhienDangNhap_ThoiGian: ExpiresAt > LoggedInAt
-        builder.ToTable(t => t.HasCheckConstraint(
-            "CK_LoginSessions_ExpiresAt",
-            "[ExpiresAt] > [LoggedInAt]"));
+        builder.HasIndex(ls => ls.AccountId)
+            .HasDatabaseName("IX_LoginSessions_AccountId");
 
-        // FK handled by AccountConfiguration via HasMany/WithOne
+        builder.HasIndex(ls => ls.ExpiresAt)
+            .HasDatabaseName("IX_LoginSessions_ExpiresAt");
+
         builder.HasOne(ls => ls.Account)
             .WithMany(a => a.LoginSessions)
             .HasForeignKey(ls => ls.AccountId)
-            .OnDelete(DeleteBehavior.Cascade);
+            .OnDelete(DeleteBehavior.Restrict);
     }
 }

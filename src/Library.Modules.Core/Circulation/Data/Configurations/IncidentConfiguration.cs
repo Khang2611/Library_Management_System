@@ -8,7 +8,14 @@ public class IncidentConfiguration : IEntityTypeConfiguration<Incident>
 {
     public void Configure(EntityTypeBuilder<Incident> builder)
     {
-        builder.ToTable("Incidents");
+        builder.ToTable("Incidents", t =>
+        {
+            t.HasCheckConstraint("CK_Incidents_IncidentType", "[IncidentType] IN (N'Lost', N'Damaged')");
+            t.HasCheckConstraint("CK_Incidents_Severity", "[Severity] IN (N'Minor', N'Major', N'TotalLoss')");
+            t.HasCheckConstraint("CK_Incidents_CompensationAmount", "[CompensationAmount] >= 0");
+            t.HasCheckConstraint("CK_Incidents_Status", "[Status] IN (N'Recorded', N'Resolved', N'Cancelled')");
+        });
+
         builder.HasKey(i => i.Id);
 
         builder.Property(i => i.Description).HasMaxLength(1000);
@@ -30,9 +37,12 @@ public class IncidentConfiguration : IEntityTypeConfiguration<Incident>
             .HasMaxLength(20)
             .HasDefaultValue(IncidentStatus.Recorded);
 
-        // CK_SuCo_TienDenBu
-        builder.ToTable(t => t.HasCheckConstraint(
-            "CK_Incidents_CompensationAmount", "[CompensationAmount] >= 0"));
+        // Indexes
+        builder.HasIndex(i => i.LoanSlipDetailId)
+            .HasDatabaseName("IX_Incidents_LoanSlipDetailId");
+
+        builder.HasIndex(i => i.LibrarianId)
+            .HasDatabaseName("IX_Incidents_LibrarianId");
 
         builder.HasOne(i => i.LoanSlipDetail)
             .WithMany(d => d.Incidents)

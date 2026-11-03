@@ -36,15 +36,25 @@ public sealed class ManageCopiesHandler : IRequestHandler<AddCopyRequest, ApiRes
         if (await _db.BookCopies.AnyAsync(c => c.Barcode == barcode, ct))
             return ApiResponse<int>.Fail($"Mã vạch '{barcode}' đã tồn tại trong hệ thống.");
 
+        // ── Verify location if provided ───────────────────────────────────────
+        int? locationId = request.LocationId;
+        if (locationId.HasValue)
+        {
+            var locationExists = await _db.Locations.AnyAsync(l => l.Id == locationId.Value, ct);
+            if (!locationExists)
+                return ApiResponse<int>.Fail($"Vị trí kệ với Id = {locationId.Value} không tồn tại.");
+        }
+
         // ── Create BookCopy entity ────────────────────────────────────────────
         var copy = new BookCopy
         {
             BookId = request.BookId,
             Barcode = barcode,
-            Location = request.Location?.Trim(),
+            LocationId = locationId,
             AcquiredDate = request.AcquiredDate ?? DateOnly.FromDateTime(DateTime.Today),
             Condition = request.Condition,
-            Status = CopyStatus.Available
+            Status = CopyStatus.Available,
+            CreatedAt = DateTime.UtcNow
         };
 
         _db.BookCopies.Add(copy);
@@ -68,12 +78,13 @@ public sealed class GetCopiesHandler : IRequestHandler<GetCopiesRequest, ApiResp
 
         // ── Query copies ──────────────────────────────────────────────────────
         var copies = await _db.BookCopies
+            .Include(c => c.Location)
             .Where(c => c.BookId == request.BookId)
             .OrderBy(c => c.Barcode)
             .Select(c => new CopyDetail(
                 c.Id,
                 c.Barcode,
-                c.Location,
+                c.Location != null ? $"{c.Location.Aisle}-{c.Location.Shelf}-{c.Location.RowLevel}" : null,
                 c.AcquiredDate,
                 c.Condition.ToString(),
                 c.Status.ToString()
@@ -103,6 +114,7 @@ public sealed class UpdateCopyStatusHandler : IRequestHandler<UpdateCopyStatusRe
 
         // ── Update status ─────────────────────────────────────────────────────
         copy.Status = request.NewStatus;
+        copy.UpdatedAt = DateTime.UtcNow;
         await _db.SaveChangesAsync(ct);
 
         return ApiResponse<bool>.Ok(true);

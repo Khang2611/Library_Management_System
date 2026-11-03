@@ -21,6 +21,7 @@ public class Renewal
 
     public RenewalStatus Status { get; set; } = RenewalStatus.Pending;
     public string? Reason { get; set; }
+    public DateTime? ResolvedAt { get; set; }
 }
 
 public enum RenewalStatus { Pending, Approved, Rejected, Cancelled }

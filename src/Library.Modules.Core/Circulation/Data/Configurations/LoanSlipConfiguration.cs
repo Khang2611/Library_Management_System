@@ -8,7 +8,17 @@ public class LoanSlipConfiguration : IEntityTypeConfiguration<LoanSlip>
 {
     public void Configure(EntityTypeBuilder<LoanSlip> builder)
     {
-        builder.ToTable("LoanSlips");
+        builder.ToTable("LoanSlips", t =>
+        {
+            t.HasCheckConstraint(
+                "CK_LoanSlips_DueDate",
+                "[DueDate] >= CAST([BorrowedAt] AS DATE)");
+
+            t.HasCheckConstraint(
+                "CK_LoanSlips_Status",
+                "[Status] IN (N'Pending', N'Borrowing', N'Returned', N'Overdue', N'Cancelled')");
+        });
+
         builder.HasKey(ls => ls.Id);
 
         builder.Property(ls => ls.BorrowedAt).HasDefaultValueSql("SYSDATETIME()");
@@ -19,10 +29,23 @@ public class LoanSlipConfiguration : IEntityTypeConfiguration<LoanSlip>
             .HasMaxLength(20)
             .HasDefaultValue(LoanStatus.Borrowing);
 
-        // CK_PhieuMuon_NgayHenTra
-        builder.ToTable(t => t.HasCheckConstraint(
-            "CK_LoanSlips_DueDate",
-            "[DueDate] >= CAST([BorrowedAt] AS DATE)"));
+        builder.Property(ls => ls.RowVersion)
+            .IsRowVersion();
+
+        builder.Ignore(ls => ls.ReturnedDate);
+
+        // Indexes
+        builder.HasIndex(ls => ls.AccountId)
+            .HasDatabaseName("IX_LoanSlips_AccountId");
+
+        builder.HasIndex(ls => ls.LibrarianId)
+            .HasDatabaseName("IX_LoanSlips_LibrarianId");
+
+        builder.HasIndex(ls => ls.Status)
+            .HasDatabaseName("IX_LoanSlips_Status");
+
+        builder.HasIndex(ls => ls.DueDate)
+            .HasDatabaseName("IX_LoanSlips_DueDate");
 
         // Cross-context FKs (no nav properties)
         builder.HasOne<Account>()

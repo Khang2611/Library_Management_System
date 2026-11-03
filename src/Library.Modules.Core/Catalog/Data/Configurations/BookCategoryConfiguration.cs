@@ -10,6 +10,9 @@ public class BookCategoryConfiguration : IEntityTypeConfiguration<BookCategory>
         builder.ToTable("BookCategories");
         builder.HasKey(bc => new { bc.BookId, bc.CategoryId });
 
+        builder.HasIndex(bc => bc.CategoryId)
+            .HasDatabaseName("IX_BookCategories_CategoryId");
+
         builder.HasOne(bc => bc.Book)
             .WithMany(b => b.BookCategories)
             .HasForeignKey(bc => bc.BookId)
