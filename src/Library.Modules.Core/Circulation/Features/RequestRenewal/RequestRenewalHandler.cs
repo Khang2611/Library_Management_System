@@ -37,6 +37,20 @@ public sealed class RequestRenewalHandler : IRequestHandler<RequestRenewalReques
         if (detail.Status != LoanDetailStatus.Borrowing)
             return ApiResponse<long>.Fail("Sách này không ở trạng thái đang mượn.");
 
+        var today = DateOnly.FromDateTime(DateTime.UtcNow);
+        if (detail.LoanSlip.DueDate < today)
+            return ApiResponse<long>.Fail("Không thể gia hạn sách đã quá hạn trả.");
+
+        if (detail.Renewals.Any(r => r.Status == RenewalStatus.Pending))
+            return ApiResponse<long>.Fail("Đang có yêu cầu gia hạn chờ duyệt cho cuốn sách này.");
+
+        var approvedRenewals = detail.Renewals.Count(r => r.Status == RenewalStatus.Approved);
+        if (approvedRenewals >= 2)
+            return ApiResponse<long>.Fail("Sách này đã đạt số lần gia hạn tối đa cho phép (tối đa 2 lần).");
+
+        if (request.NewDueDate <= detail.LoanSlip.DueDate)
+            return ApiResponse<long>.Fail("Ngày gia hạn mới phải lớn hơn hạn trả hiện tại.");
+
         var renewalCount = detail.Renewals.Count;
         var renewal = new Renewal
         {

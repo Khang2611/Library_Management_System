@@ -1,4 +1,3 @@
-using Library.Modules.Core.Identity.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -46,18 +45,6 @@ public class LoanSlipConfiguration : IEntityTypeConfiguration<LoanSlip>
 
         builder.HasIndex(ls => ls.DueDate)
             .HasDatabaseName("IX_LoanSlips_DueDate");
-
-        // Cross-context FKs (no nav properties)
-        builder.HasOne<Account>()
-            .WithMany()
-            .HasForeignKey(ls => ls.AccountId)
-            .OnDelete(DeleteBehavior.Restrict);
-
-        builder.HasOne<Account>()
-            .WithMany()
-            .HasForeignKey(ls => ls.LibrarianId)
-            .OnDelete(DeleteBehavior.Restrict)
-            .IsRequired(false);
 
         // Within Circulation context navigation
         builder.HasMany(ls => ls.Details)

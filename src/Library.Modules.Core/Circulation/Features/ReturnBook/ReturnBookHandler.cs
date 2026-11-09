@@ -1,5 +1,6 @@
 using FluentValidation;
-using Library.Modules.Core.Catalog.Data;
+using Library.Modules.Core.Catalog.Contracts;
+using Library.Modules.Core.Circulation.Contracts;
 using Library.Modules.Core.Circulation.Data;
 using Library.Modules.Core.Shared;
 using MediatR;
@@ -11,11 +12,13 @@ public sealed class ReturnBookHandler : IRequestHandler<ReturnBookRequest, ApiRe
 {
     private readonly AppDbContext _db;
     private readonly IValidator<ReturnBookRequest> _validator;
+    private readonly ISender _sender;
 
-    public ReturnBookHandler(AppDbContext db, IValidator<ReturnBookRequest> validator)
+    public ReturnBookHandler(AppDbContext db, IValidator<ReturnBookRequest> validator, ISender sender)
     {
         _db = db;
         _validator = validator;
+        _sender = sender;
     }
 
     public async Task<ApiResponse<bool>> Handle(ReturnBookRequest request, CancellationToken ct)
@@ -36,7 +39,7 @@ public sealed class ReturnBookHandler : IRequestHandler<ReturnBookRequest, ApiRe
             .Select(d => d.BookCopyId)
             .ToList();
 
-        var bookCopies = await _db.BookCopies.Where(c => copyIdsToUpdate.Contains(c.Id)).ToListAsync(ct);
+        var copyMap = await _sender.Send(new GetCopyInfosQuery(copyIdsToUpdate), ct);
 
         foreach (var ret in request.ReturnedCopies)
         {
@@ -47,10 +50,27 @@ public sealed class ReturnBookHandler : IRequestHandler<ReturnBookRequest, ApiRe
                 detail.ActualReturnDate = DateOnly.FromDateTime(DateTime.UtcNow);
                 detail.Notes = ret.Notes;
 
-                var copy = bookCopies.FirstOrDefault(c => c.Id == detail.BookCopyId);
-                if (copy != null)
+                if (copyMap.TryGetValue(detail.BookCopyId, out var copy))
                 {
-                    copy.Status = CopyStatus.Available;
+                    if (copy.Condition == CopyCondition.MajorDamage)
+                    {
+                        await _sender.Send(new SetCopyStatusCommand(
+                            copy.CopyId,
+                            null,
+                            CopyStatus.Maintenance,
+                            copy.Condition), ct);
+                    }
+                    else
+                    {
+                        var newStatus = await _sender.Send(
+                            new ReleaseCopyCommand(copy.BookId, copy.CopyId, null), ct);
+
+                        await _sender.Send(new SetCopyStatusCommand(
+                            copy.CopyId,
+                            null,
+                            newStatus,
+                            copy.Condition), ct);
+                    }
                 }
             }
         }

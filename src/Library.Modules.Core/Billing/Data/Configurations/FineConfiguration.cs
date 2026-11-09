@@ -1,5 +1,4 @@
-using Library.Modules.Core.Circulation.Data;
-using Library.Modules.Core.Identity.Data;
+using Library.Modules.Core.Billing.Contracts;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -42,24 +41,6 @@ public class FineConfiguration : IEntityTypeConfiguration<Fine>
 
         builder.HasIndex(f => f.Status)
             .HasDatabaseName("IX_Fines_Status");
-
-        // Cross-context FKs (no navigation properties)
-        builder.HasOne<Account>()
-            .WithMany()
-            .HasForeignKey(f => f.AccountId)
-            .OnDelete(DeleteBehavior.Restrict);
-
-        builder.HasOne<LoanSlipDetail>()
-            .WithMany()
-            .HasForeignKey(f => f.LoanSlipDetailId)
-            .OnDelete(DeleteBehavior.Restrict)
-            .IsRequired(false);
-
-        builder.HasOne<Incident>()
-            .WithMany()
-            .HasForeignKey(f => f.IncidentId)
-            .OnDelete(DeleteBehavior.Restrict)
-            .IsRequired(false);
 
         // Within Billing context
         builder.HasMany(f => f.Payments)

@@ -1,4 +1,4 @@
-using Library.Modules.Core.Identity.Data;
+using Library.Modules.Core.Circulation.Contracts;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -48,12 +48,5 @@ public class IncidentConfiguration : IEntityTypeConfiguration<Incident>
             .WithMany(d => d.Incidents)
             .HasForeignKey(i => i.LoanSlipDetailId)
             .OnDelete(DeleteBehavior.Restrict);
-
-        // Cross-context FK → Identity.Account (librarian)
-        builder.HasOne<Account>()
-            .WithMany()
-            .HasForeignKey(i => i.LibrarianId)
-            .OnDelete(DeleteBehavior.Restrict)
-            .IsRequired(false);
     }
 }

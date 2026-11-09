@@ -1,4 +1,4 @@
-﻿using FluentValidation;
+using FluentValidation;
 using Library.Modules.Core.Circulation.Data;
 using Library.Modules.Core.Shared;
 using MediatR;
@@ -32,7 +32,8 @@ public sealed class ApproveRenewalHandler : IRequestHandler<ApproveRenewalReques
 
         renewal.Status = request.Status;
         renewal.LibrarianId = request.LibrarianId;
-        
+        renewal.ResolvedAt = DateTime.UtcNow;
+
         if (request.Status == RenewalStatus.Rejected)
             renewal.Reason = request.Reason;
 
@@ -41,6 +42,11 @@ public sealed class ApproveRenewalHandler : IRequestHandler<ApproveRenewalReques
             if (renewal.LoanSlipDetail?.LoanSlip != null)
             {
                 renewal.LoanSlipDetail.LoanSlip.DueDate = renewal.NewDueDate;
+                if (renewal.LoanSlipDetail.LoanSlip.Status == LoanStatus.Overdue &&
+                    renewal.NewDueDate >= DateOnly.FromDateTime(DateTime.UtcNow))
+                {
+                    renewal.LoanSlipDetail.LoanSlip.Status = LoanStatus.Borrowing;
+                }
             }
         }
 

@@ -1,4 +1,5 @@
 using FluentValidation;
+using Library.Modules.Core.Billing.Contracts;
 using Library.Modules.Core.Billing.Data;
 using Library.Modules.Core.Shared;
 using Library.Modules.Core.Shared.Events;

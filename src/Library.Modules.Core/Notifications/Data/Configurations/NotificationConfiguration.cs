@@ -1,4 +1,3 @@
-using Library.Modules.Core.Identity.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -30,11 +29,5 @@ public class NotificationConfiguration : IEntityTypeConfiguration<Notification>
 
         builder.HasIndex(n => new { n.AccountId, n.IsRead })
             .HasDatabaseName("IX_Notifications_IsRead");
-
-        // Cross-context FK → Identity.Account (SQL: ON DELETE NO ACTION)
-        builder.HasOne<Account>()
-            .WithMany()
-            .HasForeignKey(n => n.AccountId)
-            .OnDelete(DeleteBehavior.Restrict);
     }
 }

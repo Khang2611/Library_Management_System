@@ -1,5 +1,7 @@
 using FluentValidation;
+using Library.Modules.Core.Catalog.Contracts;
 using Library.Modules.Core.Catalog.Data;
+using Library.Modules.Core.Circulation.Contracts;
 using Library.Modules.Core.Shared;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
@@ -99,7 +101,13 @@ public sealed class GetCopiesHandler : IRequestHandler<GetCopiesRequest, ApiResp
 public sealed class UpdateCopyStatusHandler : IRequestHandler<UpdateCopyStatusRequest, ApiResponse<bool>>
 {
     private readonly AppDbContext _db;
-    public UpdateCopyStatusHandler(AppDbContext db) => _db = db;
+    private readonly ISender _sender;
+
+    public UpdateCopyStatusHandler(AppDbContext db, ISender sender)
+    {
+        _db = db;
+        _sender = sender;
+    }
 
     public async Task<ApiResponse<bool>> Handle(UpdateCopyStatusRequest request, CancellationToken ct)
     {
@@ -111,6 +119,10 @@ public sealed class UpdateCopyStatusHandler : IRequestHandler<UpdateCopyStatusRe
         // ── Validate enum value ───────────────────────────────────────────────
         if (!Enum.IsDefined(request.NewStatus))
             return ApiResponse<bool>.Fail("Trạng thái bản sao không hợp lệ.");
+
+        var hasActiveLoan = await _sender.Send(new HasActiveLoanForCopyQuery(request.CopyId), ct);
+        if (hasActiveLoan)
+            return ApiResponse<bool>.Fail("Không thể đổi trạng thái bản sao đang được mượn.");
 
         // ── Update status ─────────────────────────────────────────────────────
         copy.Status = request.NewStatus;

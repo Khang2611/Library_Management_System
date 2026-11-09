@@ -10,6 +10,8 @@ using Library.Modules.Core.Catalog.Features.SearchBook;
 using Library.Modules.Core.Catalog.Features.ManageCopies;
 using Library.Modules.Core.Billing.Features.IssueFine;
 using Library.Modules.Core.Billing.Features.PayFine;
+using Library.Web;
+using MediatR;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
@@ -77,7 +79,7 @@ builder.Services.AddCors(options =>
 });
 
 // ── Background Jobs ───────────────────────────────────────────────────────────
-// Các thành viên có thể đăng ký HostedService / Background Service tại đây nếu cần.
+builder.Services.AddHostedService<Library.Web.BackgroundJobs.OverdueCheckWorker>();
 
 var app = builder.Build();
 
@@ -103,8 +105,6 @@ Library.Modules.Core.Identity.Features.RefreshToken.RefreshTokenEndpoint.Map(app
 Library.Modules.Core.Identity.Features.Logout.LogoutEndpoint.Map(app);
 Library.Modules.Core.Identity.Features.GetMyProfile.GetMyProfileEndpoint.Map(app);
 
-// ── Các module khác (Catalog, Circulation, Billing, Notifications, AI,...) ───
-// Các thành viên phụ trách từng module sẽ tự đăng ký Endpoint tại đây:
 // ── Catalog ───────────────────────────────────────────────────────────────────
 AddBookEndpoint.Map(app);
 Library.Modules.Core.Catalog.Features.UpdateBook.UpdateBookEndpoint.Map(app);
@@ -115,22 +115,7 @@ Library.Modules.Core.Catalog.Features.ManageAuthors.ManageAuthorsEndpoint.Map(ap
 Library.Modules.Core.Catalog.Features.ManageCategories.ManageCategoriesEndpoint.Map(app);
 
 // ── Circulation ───────────────────────────────────────────────────────────────
-Library.Modules.Core.Circulation.Features.BorrowBook.BorrowBookEndpoint.Map(app);
-Library.Modules.Core.Circulation.Features.ReturnBook.ReturnBookEndpoint.Map(app);
-Library.Modules.Core.Circulation.Features.ReserveBook.ReserveBookEndpoint.Map(app);
-Library.Modules.Core.Circulation.Features.RequestRenewal.RequestRenewalEndpoint.Map(app);
-Library.Modules.Core.Circulation.Features.ApproveRenewal.ApproveRenewalEndpoint.Map(app);
-Library.Modules.Core.Circulation.Features.GetMyLoans.GetMyLoansEndpoint.Map(app);
-Library.Modules.Core.Circulation.Features.CancelReservation.CancelReservationEndpoint.Map(app);
-Library.Modules.Core.Circulation.Features.ReportIncident.ReportIncidentEndpoint.Map(app);
-Library.Modules.Core.Circulation.Features.GetAllLoans.GetAllLoansEndpoint.Map(app);
-Library.Modules.Core.Circulation.Features.GetAllReservations.GetAllReservationsEndpoint.Map(app);
-Library.Modules.Core.Circulation.Features.GetLoanDetail.GetLoanDetailEndpoint.Map(app);
-Library.Modules.Core.Circulation.Features.GetAllRenewals.GetAllRenewalsEndpoint.Map(app);
-Library.Modules.Core.Circulation.Features.GetMyReservations.GetMyReservationsEndpoint.Map(app);
-Library.Modules.Core.Circulation.Features.GetLoanDetail.GetLoanDetailEndpoint.Map(app);
-Library.Modules.Core.Circulation.Features.GetAllRenewals.GetAllRenewalsEndpoint.Map(app);
-Library.Modules.Core.Circulation.Features.GetMyReservations.GetMyReservationsEndpoint.Map(app);
+app.MapCirculationEndpoints();
 
 // ── Billing ───────────────────────────────────────────────────────────────────
 IssueFineEndpoint.Map(app);
@@ -138,7 +123,24 @@ PayFineEndpoint.Map(app);
 Library.Modules.Core.Billing.Features.GetMyFines.GetMyFinesEndpoint.Map(app);
 Library.Modules.Core.Billing.Features.GetAllFines.GetAllFinesEndpoint.Map(app);
 
-// ── Database Schema & Seed Initializer ────────────────────────────────────────
+// ── Database Schema Migration & Default Admin Seeding ─────────────────────────
+using (var scope = app.Services.CreateScope())
+{
+    var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+    try
+    {
+        await db.Database.MigrateAsync();
+    }
+    catch
+    {
+        await db.Database.EnsureCreatedAsync();
+    }
+
+    var sender = scope.ServiceProvider.GetRequiredService<ISender>();
+    await sender.Send(new Library.Modules.Core.Identity.Contracts.SeedDefaultAdminCommand());
+}
+
+// ── Database Initializer ──────────────────────────────────────────────────────
 await Library.Web.DbInitializer.InitializeAsync(app);
 
 app.Run();

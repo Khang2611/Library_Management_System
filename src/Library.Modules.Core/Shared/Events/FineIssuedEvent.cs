@@ -1,5 +1,5 @@
 using MediatR;
-using Library.Modules.Core.Billing.Data;
+using Library.Modules.Core.Billing.Contracts;
 
 namespace Library.Modules.Core.Shared.Events;
 

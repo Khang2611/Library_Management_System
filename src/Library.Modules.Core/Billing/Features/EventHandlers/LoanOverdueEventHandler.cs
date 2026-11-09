@@ -1,3 +1,4 @@
+using Library.Modules.Core.Billing.Contracts;
 using Library.Modules.Core.Billing.Data;
 using Library.Modules.Core.Billing.Features.IssueFine;
 using Library.Modules.Core.Shared.Events;
@@ -10,12 +11,12 @@ namespace Library.Modules.Core.Billing.Features.EventHandlers;
 public class LoanOverdueEventHandler : INotificationHandler<LoanOverdueEvent>
 {
     private readonly AppDbContext _db;
-    private readonly IMediator _mediator;
+    private readonly ISender _sender;
 
-    public LoanOverdueEventHandler(AppDbContext db, IMediator mediator)
+    public LoanOverdueEventHandler(AppDbContext db, ISender sender)
     {
         _db = db;
-        _mediator = mediator;
+        _sender = sender;
     }
 
     public async Task Handle(LoanOverdueEvent notification, CancellationToken ct)
@@ -27,7 +28,7 @@ public class LoanOverdueEventHandler : INotificationHandler<LoanOverdueEvent>
         var daysLate = (int)(DateOnly.FromDateTime(DateTime.UtcNow).DayNumber - notification.DueDate.DayNumber);
         var fineAmount = daysLate * 5000m; // 5000 VND per day overdue
 
-        await _mediator.Send(new IssueFineRequest(
+        await _sender.Send(new IssueFineRequest(
             notification.AccountId,
             notification.LoanSlipDetailId,
             null,

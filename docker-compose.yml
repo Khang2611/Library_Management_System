@@ -1,7 +1,7 @@
 services:
   sqlserver:
     image: mcr.microsoft.com/mssql/server:2022-latest
-    container_name: library_sqlserver
+    container_name: chuyen_de_tong_hop
     user: root
     restart: always
     environment:
@@ -23,7 +23,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: library_api
+    container_name: chuyen_de_tong_hop_api
     restart: always
     environment:
       - ASPNETCORE_ENVIRONMENT=Production
@@ -33,11 +33,11 @@ services:
       - AdminSeed__Email=${ADMIN_EMAIL}
       - AdminSeed__FullName=${ADMIN_FULLNAME}
     ports:
-      - "8080:8080"
+      - "8082:8080"
     depends_on:
       sqlserver:
         condition: service_healthy
 
 volumes:
   sqlserver_data:
-    name: library_sqlserver_data
+    name: chuyen_de_tong_hop_data

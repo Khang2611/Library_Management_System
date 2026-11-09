@@ -1,5 +1,3 @@
-using Library.Modules.Core.Catalog.Data;
-using Library.Modules.Core.Identity.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -44,22 +42,5 @@ public class ReservationConfiguration : IEntityTypeConfiguration<Reservation>
 
         builder.HasIndex(r => r.Status)
             .HasDatabaseName("IX_Reservations_Status");
-
-        // Cross-context FKs (no navigation properties, primitive IDs only)
-        builder.HasOne<Account>()
-            .WithMany()
-            .HasForeignKey(r => r.AccountId)
-            .OnDelete(DeleteBehavior.Restrict);
-
-        builder.HasOne<Book>()
-            .WithMany()
-            .HasForeignKey(r => r.BookId)
-            .OnDelete(DeleteBehavior.Restrict);
-
-        builder.HasOne<BookCopy>()
-            .WithMany()
-            .HasForeignKey(r => r.BookCopyId)
-            .OnDelete(DeleteBehavior.Restrict)
-            .IsRequired(false);
     }
 }

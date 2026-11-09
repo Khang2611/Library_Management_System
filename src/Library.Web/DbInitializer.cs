@@ -1,4 +1,5 @@
 using System.Text.Json;
+using Library.Modules.Core.Catalog.Contracts;
 using Library.Modules.Core.Catalog.Data;
 using Library.Modules.Core.Identity.Data;
 using Library.Modules.Core.Shared;

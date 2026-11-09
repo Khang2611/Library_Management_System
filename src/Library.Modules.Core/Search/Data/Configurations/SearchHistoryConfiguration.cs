@@ -1,4 +1,3 @@
-using Library.Modules.Core.Identity.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -23,11 +22,5 @@ public class SearchHistoryConfiguration : IEntityTypeConfiguration<SearchHistory
 
         builder.HasIndex(sh => sh.AccountId)
             .HasDatabaseName("IX_SearchHistories_AccountId");
-
-        // Cross-context FK → Identity.Account (SQL: ON DELETE NO ACTION)
-        builder.HasOne<Account>()
-            .WithMany()
-            .HasForeignKey(sh => sh.AccountId)
-            .OnDelete(DeleteBehavior.Restrict);
     }
 }
