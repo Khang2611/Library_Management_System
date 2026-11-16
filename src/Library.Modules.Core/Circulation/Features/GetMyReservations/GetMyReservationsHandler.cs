@@ -8,10 +8,10 @@ namespace Library.Modules.Core.Circulation.Features.GetMyReservations;
 
 public sealed class GetMyReservationsHandler : IRequestHandler<GetMyReservationsRequest, ApiResponse<List<MyReservationDto>>>
 {
-    private readonly AppDbContext _db;
+    private readonly CirculationDbContext _db;
     private readonly ISender _sender;
 
-    public GetMyReservationsHandler(AppDbContext db, ISender sender)
+    public GetMyReservationsHandler(CirculationDbContext db, ISender sender)
     {
         _db = db;
         _sender = sender;
@@ -33,14 +33,14 @@ public sealed class GetMyReservationsHandler : IRequestHandler<GetMyReservations
             .Select(r => r.BookCopyId!.Value)
             .Distinct()
             .ToList();
-        var copies = await _sender.Send(new GetCopyInfosQuery(copyIds), ct);
+        var copyMap = await _sender.Send(new GetCopyInfosQuery(copyIds), ct);
 
         var result = reservations.Select(r =>
         {
             books.TryGetValue(r.BookId, out var book);
             string? barcode = null;
-            if (r.BookCopyId.HasValue && copies.TryGetValue(r.BookCopyId.Value, out var cInfo))
-                barcode = cInfo.Barcode;
+            if (r.BookCopyId.HasValue && copyMap.TryGetValue(r.BookCopyId.Value, out var cp))
+                barcode = cp.Barcode;
 
             return new MyReservationDto(
                 r.Id,

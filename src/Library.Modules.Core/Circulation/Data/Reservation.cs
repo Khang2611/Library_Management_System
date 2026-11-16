@@ -23,7 +23,7 @@ public class Reservation
     public DateTime? CancelledAt { get; set; }
 
     public ReservationStatus Status { get; set; } = ReservationStatus.Waiting;
-    public byte[] RowVersion { get; set; } = [];
+    public byte[] RowVersion { get; set; } = default!;
 }
 
 public enum ReservationStatus { Waiting, Ready, Completed, Cancelled, Expired }

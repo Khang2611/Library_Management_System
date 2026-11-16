@@ -1,4 +1,5 @@
 using Library.Modules.Core.Catalog.Contracts;
+using Library.Modules.Core.Circulation.Data;
 using Library.Modules.Core.Identity.Contracts;
 using Library.Modules.Core.Shared;
 using MediatR;
@@ -8,10 +9,10 @@ namespace Library.Modules.Core.Circulation.Features.GetLoanDetail;
 
 public sealed class GetLoanDetailHandler : IRequestHandler<GetLoanDetailRequest, ApiResponse<LoanSlipDetailResult>>
 {
-    private readonly AppDbContext _db;
+    private readonly CirculationDbContext _db;
     private readonly ISender _sender;
 
-    public GetLoanDetailHandler(AppDbContext db, ISender sender)
+    public GetLoanDetailHandler(CirculationDbContext db, ISender sender)
     {
         _db = db;
         _sender = sender;
@@ -27,10 +28,8 @@ public sealed class GetLoanDetailHandler : IRequestHandler<GetLoanDetailRequest,
         if (slip == null)
             return ApiResponse<LoanSlipDetailResult>.Fail("Phiếu mượn không tồn tại.");
 
-        // Reader (Identity context has no navigation from Circulation, so look it up by id)
         var reader = await _sender.Send(new GetAccountSummaryQuery(slip.AccountId), ct);
 
-        // Book copies + titles (Catalog context)
         var copyIds = slip.Details.Select(d => d.BookCopyId).Distinct().ToList();
         var copyMap = await _sender.Send(new GetCopyInfosQuery(copyIds), ct);
 
@@ -52,15 +51,21 @@ public sealed class GetLoanDetailHandler : IRequestHandler<GetLoanDetailRequest,
             })
             .ToList();
 
+        var returnedDate = slip.Details
+            .Where(d => d.ActualReturnDate.HasValue)
+            .Select(d => d.ActualReturnDate)
+            .OrderByDescending(d => d)
+            .FirstOrDefault();
+
         var result = new LoanSlipDetailResult(
             slip.Id,
             slip.AccountId,
             reader?.FullName,
             reader?.Username,
             slip.LibrarianId,
-            slip.BorrowedAt,
+            VietnamTime.SpecifyUtc(slip.BorrowedAt),
             slip.DueDate,
-            slip.ReturnedDate,
+            returnedDate,
             slip.Status.ToString(),
             slip.Notes,
             items);

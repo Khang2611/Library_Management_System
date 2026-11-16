@@ -1,3 +1,4 @@
+using Library.Modules.Core.Identity.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -7,11 +8,7 @@ public class NotificationConfiguration : IEntityTypeConfiguration<Notification>
 {
     public void Configure(EntityTypeBuilder<Notification> builder)
     {
-        builder.ToTable("Notifications", t =>
-        {
-            t.HasCheckConstraint("CK_Notifications_NotificationType", "[NotificationType] IN (N'Reserve', N'Borrow', N'Return', N'Fine', N'System')");
-        });
-
+        builder.ToTable("Notifications");
         builder.HasKey(n => n.Id);
 
         builder.Property(n => n.Title).HasMaxLength(200).IsRequired();
@@ -23,11 +20,9 @@ public class NotificationConfiguration : IEntityTypeConfiguration<Notification>
             .HasConversion<string>()
             .HasMaxLength(30);
 
-        // Indexes
-        builder.HasIndex(n => n.AccountId)
-            .HasDatabaseName("IX_Notifications_AccountId");
-
-        builder.HasIndex(n => new { n.AccountId, n.IsRead })
-            .HasDatabaseName("IX_Notifications_IsRead");
+        builder.ToTable("Notifications", t =>
+        {
+            t.HasCheckConstraint("CK_Notifications_NotificationType", "[NotificationType] IN (N'Reserve', N'Borrow', N'Return', N'Fine', N'System')");
+        });
     }
 }
