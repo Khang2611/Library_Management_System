@@ -1,3 +1,4 @@
+﻿using Library.Modules.Core.Catalog.Data;
 using Library.Modules.Core.Shared;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
@@ -6,8 +7,8 @@ namespace Library.Modules.Core.Catalog.Features.GetBookDetails;
 
 public sealed class GetBookDetailsHandler : IRequestHandler<GetBookDetailsRequest, ApiResponse<BookDetailResult>>
 {
-    private readonly AppDbContext _db;
-    public GetBookDetailsHandler(AppDbContext db) => _db = db;
+    private readonly CatalogDbContext _db;
+    public GetBookDetailsHandler(CatalogDbContext db) => _db = db;
 
     public async Task<ApiResponse<BookDetailResult>> Handle(GetBookDetailsRequest request, CancellationToken ct)
     {
@@ -17,7 +18,7 @@ public sealed class GetBookDetailsHandler : IRequestHandler<GetBookDetailsReques
             .AsNoTracking()
             .FirstOrDefaultAsync(b => b.Id == request.BookId, ct);
 
-        if (book == null) return ApiResponse<BookDetailResult>.Fail("S�ch kh�ng t?n t?i.");
+        if (book == null) return ApiResponse<BookDetailResult>.Fail("Sách không tồn tại.");
 
         var result = new BookDetailResult(
             book.Id, book.Title, book.Isbn, book.Description,

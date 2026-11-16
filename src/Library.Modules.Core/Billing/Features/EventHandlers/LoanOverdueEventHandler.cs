@@ -10,10 +10,10 @@ namespace Library.Modules.Core.Billing.Features.EventHandlers;
 
 public class LoanOverdueEventHandler : INotificationHandler<LoanOverdueEvent>
 {
-    private readonly AppDbContext _db;
+    private readonly BillingDbContext _db;
     private readonly ISender _sender;
 
-    public LoanOverdueEventHandler(AppDbContext db, ISender sender)
+    public LoanOverdueEventHandler(BillingDbContext db, ISender sender)
     {
         _db = db;
         _sender = sender;

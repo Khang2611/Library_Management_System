@@ -1,4 +1,4 @@
-using FluentValidation;
+﻿using FluentValidation;
 using Library.Modules.Core.Catalog.Contracts;
 using Library.Modules.Core.Catalog.Data;
 using Library.Modules.Core.Circulation.Contracts;
@@ -11,10 +11,10 @@ namespace Library.Modules.Core.Catalog.Features.ManageCopies;
 /// <summary>Handles adding a new physical copy (BookCopy) to an existing book.</summary>
 public sealed class ManageCopiesHandler : IRequestHandler<AddCopyRequest, ApiResponse<int>>
 {
-    private readonly AppDbContext _db;
+    private readonly CatalogDbContext _db;
     private readonly IValidator<AddCopyRequest> _validator;
 
-    public ManageCopiesHandler(AppDbContext db, IValidator<AddCopyRequest> validator)
+    public ManageCopiesHandler(CatalogDbContext db, IValidator<AddCopyRequest> validator)
     {
         _db = db;
         _validator = validator;
@@ -22,32 +22,32 @@ public sealed class ManageCopiesHandler : IRequestHandler<AddCopyRequest, ApiRes
 
     public async Task<ApiResponse<int>> Handle(AddCopyRequest request, CancellationToken ct)
     {
-        // ── Validate input ────────────────────────────────────────────────────
+        // â”€â”€ Validate input â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         var validation = await _validator.ValidateAsync(request, ct);
         if (!validation.IsValid)
             return ApiResponse<int>.Fail(
                 string.Join("; ", validation.Errors.Select(e => e.ErrorMessage)));
 
-        // ── Verify book exists ────────────────────────────────────────────────
+        // â”€â”€ Verify book exists â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         var bookExists = await _db.Books.AnyAsync(b => b.Id == request.BookId, ct);
         if (!bookExists)
-            return ApiResponse<int>.Fail($"Sách với Id = {request.BookId} không tồn tại.");
+            return ApiResponse<int>.Fail($"SĂ¡ch vá»›i Id = {request.BookId} khĂ´ng tá»“n táº¡i.");
 
-        // ── Check barcode uniqueness ──────────────────────────────────────────
+        // â”€â”€ Check barcode uniqueness â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         var barcode = request.Barcode.Trim();
         if (await _db.BookCopies.AnyAsync(c => c.Barcode == barcode, ct))
-            return ApiResponse<int>.Fail($"Mã vạch '{barcode}' đã tồn tại trong hệ thống.");
+            return ApiResponse<int>.Fail($"MĂ£ váº¡ch '{barcode}' Ä‘Ă£ tá»“n táº¡i trong há»‡ thá»‘ng.");
 
-        // ── Verify location if provided ───────────────────────────────────────
+        // â”€â”€ Verify location if provided â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         int? locationId = request.LocationId;
         if (locationId.HasValue)
         {
             var locationExists = await _db.Locations.AnyAsync(l => l.Id == locationId.Value, ct);
             if (!locationExists)
-                return ApiResponse<int>.Fail($"Vị trí kệ với Id = {locationId.Value} không tồn tại.");
+                return ApiResponse<int>.Fail($"Vá»‹ trĂ­ ká»‡ vá»›i Id = {locationId.Value} khĂ´ng tá»“n táº¡i.");
         }
 
-        // ── Create BookCopy entity ────────────────────────────────────────────
+        // â”€â”€ Create BookCopy entity â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         var copy = new BookCopy
         {
             BookId = request.BookId,
@@ -69,16 +69,16 @@ public sealed class ManageCopiesHandler : IRequestHandler<AddCopyRequest, ApiRes
 /// <summary>Handles retrieving all physical copies of a given book.</summary>
 public sealed class GetCopiesHandler : IRequestHandler<GetCopiesRequest, ApiResponse<List<CopyDetail>>>
 {
-    private readonly AppDbContext _db;
-    public GetCopiesHandler(AppDbContext db) => _db = db;
+    private readonly CatalogDbContext _db;
+    public GetCopiesHandler(CatalogDbContext db) => _db = db;
 
     public async Task<ApiResponse<List<CopyDetail>>> Handle(GetCopiesRequest request, CancellationToken ct)
     {
-        // ── Verify book exists ────────────────────────────────────────────────
+        // â”€â”€ Verify book exists â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         if (!await _db.Books.AnyAsync(b => b.Id == request.BookId, ct))
-            return ApiResponse<List<CopyDetail>>.Fail($"Sách với Id = {request.BookId} không tồn tại.");
+            return ApiResponse<List<CopyDetail>>.Fail($"SĂ¡ch vá»›i Id = {request.BookId} khĂ´ng tá»“n táº¡i.");
 
-        // ── Query copies ──────────────────────────────────────────────────────
+        // â”€â”€ Query copies â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         var copies = await _db.BookCopies
             .Include(c => c.Location)
             .Where(c => c.BookId == request.BookId)
@@ -100,10 +100,10 @@ public sealed class GetCopiesHandler : IRequestHandler<GetCopiesRequest, ApiResp
 /// <summary>Handles updating the status of a specific book copy.</summary>
 public sealed class UpdateCopyStatusHandler : IRequestHandler<UpdateCopyStatusRequest, ApiResponse<bool>>
 {
-    private readonly AppDbContext _db;
+    private readonly CatalogDbContext _db;
     private readonly ISender _sender;
 
-    public UpdateCopyStatusHandler(AppDbContext db, ISender sender)
+    public UpdateCopyStatusHandler(CatalogDbContext db, ISender sender)
     {
         _db = db;
         _sender = sender;
@@ -111,20 +111,20 @@ public sealed class UpdateCopyStatusHandler : IRequestHandler<UpdateCopyStatusRe
 
     public async Task<ApiResponse<bool>> Handle(UpdateCopyStatusRequest request, CancellationToken ct)
     {
-        // ── Find the copy ─────────────────────────────────────────────────────
+        // â”€â”€ Find the copy â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         var copy = await _db.BookCopies.FindAsync([request.CopyId], ct);
         if (copy is null)
-            return ApiResponse<bool>.Fail($"Bản sao với Id = {request.CopyId} không tồn tại.");
+            return ApiResponse<bool>.Fail($"Báº£n sao vá»›i Id = {request.CopyId} khĂ´ng tá»“n táº¡i.");
 
-        // ── Validate enum value ───────────────────────────────────────────────
+        // â”€â”€ Validate enum value â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         if (!Enum.IsDefined(request.NewStatus))
-            return ApiResponse<bool>.Fail("Trạng thái bản sao không hợp lệ.");
+            return ApiResponse<bool>.Fail("Tráº¡ng thĂ¡i báº£n sao khĂ´ng há»£p lá»‡.");
 
         var hasActiveLoan = await _sender.Send(new HasActiveLoanForCopyQuery(request.CopyId), ct);
         if (hasActiveLoan)
-            return ApiResponse<bool>.Fail("Không thể đổi trạng thái bản sao đang được mượn.");
+            return ApiResponse<bool>.Fail("KhĂ´ng thá»ƒ Ä‘á»•i tráº¡ng thĂ¡i báº£n sao Ä‘ang Ä‘Æ°á»£c mÆ°á»£n.");
 
-        // ── Update status ─────────────────────────────────────────────────────
+        // â”€â”€ Update status â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         copy.Status = request.NewStatus;
         copy.UpdatedAt = DateTime.UtcNow;
         await _db.SaveChangesAsync(ct);

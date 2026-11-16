@@ -2,7 +2,6 @@ using System.Text.Json;
 using Library.Modules.Core.Catalog.Contracts;
 using Library.Modules.Core.Catalog.Data;
 using Library.Modules.Core.Identity.Data;
-using Library.Modules.Core.Shared;
 using Microsoft.EntityFrameworkCore;
 
 namespace Library.Web;
@@ -17,7 +16,8 @@ public static class DbInitializer
 
         try
         {
-            var db = services.GetRequiredService<AppDbContext>();
+            var identityDb = services.GetRequiredService<IdentityDbContext>();
+            var catalogDb = services.GetRequiredService<CatalogDbContext>();
 
             // Retry connecting to DB container if it's starting up
             var retryCount = 0;
@@ -26,7 +26,7 @@ public static class DbInitializer
                 try
                 {
                     logger.LogInformation("Attempting to connect to database...");
-                    await db.Database.EnsureCreatedAsync();
+                    await catalogDb.Database.CanConnectAsync();
                     logger.LogInformation("Database connected and schema verified.");
                     break;
                 }
@@ -40,7 +40,7 @@ public static class DbInitializer
             }
 
             // 1. Seed Accounts if empty
-            if (!await db.Accounts.AnyAsync())
+            if (!await identityDb.Accounts.AnyAsync())
             {
                 logger.LogInformation("Seeding initial accounts (admin, librarian, reader)...");
 
@@ -80,13 +80,13 @@ public static class DbInitializer
                     CreatedAt = DateTime.UtcNow
                 };
 
-                db.Accounts.AddRange(admin, librarian, reader);
-                await db.SaveChangesAsync();
+                identityDb.Accounts.AddRange(admin, librarian, reader);
+                await identityDb.SaveChangesAsync();
                 logger.LogInformation("Initial accounts seeded successfully.");
             }
 
             // 2. Seed Locations if empty
-            var locations = await db.Locations.ToListAsync();
+            var locations = await catalogDb.Locations.ToListAsync();
             if (locations.Count == 0)
             {
                 logger.LogInformation("Seeding initial shelf locations (He Toa Do Vi Tri Ke 3D)...");
@@ -99,13 +99,13 @@ public static class DbInitializer
                     new Location { Aisle = "Khu B", Shelf = "Kệ 1", RowLevel = 1, MaxCapacity = 50, CreatedAt = DateTime.UtcNow },
                     new Location { Aisle = "Khu B", Shelf = "Kệ 2", RowLevel = 1, MaxCapacity = 50, CreatedAt = DateTime.UtcNow }
                 ];
-                db.Locations.AddRange(locations);
-                await db.SaveChangesAsync();
+                catalogDb.Locations.AddRange(locations);
+                await catalogDb.SaveChangesAsync();
                 logger.LogInformation("Initial shelf locations seeded successfully.");
             }
 
             // 3. Seed Books from books_seed.json if empty
-            if (!await db.Books.AnyAsync())
+            if (!await catalogDb.Books.AnyAsync())
             {
                 logger.LogInformation("Checking for books_seed.json...");
                 var candidatePaths = new[]
@@ -145,7 +145,7 @@ public static class DbInitializer
                         if (!string.IsNullOrWhiteSpace(catName) && !categoryDict.TryGetValue(catName, out var category))
                         {
                             category = new Category { Name = catName, Description = $"Chuyên mục sách {catName}" };
-                            db.Categories.Add(category);
+                            catalogDb.Categories.Add(category);
                             categoryDict[catName] = category;
                         }
 
@@ -153,7 +153,7 @@ public static class DbInitializer
                         if (!string.IsNullOrWhiteSpace(authorName) && !authorDict.TryGetValue(authorName, out var author))
                         {
                             author = new Author { Name = authorName, Biography = $"Tác giả {authorName}", CreatedAt = DateTime.UtcNow };
-                            db.Authors.Add(author);
+                            catalogDb.Authors.Add(author);
                             authorDict[authorName] = author;
                         }
 
@@ -219,12 +219,12 @@ public static class DbInitializer
                             });
                         }
 
-                        db.Books.Add(book);
+                        catalogDb.Books.Add(book);
                         count++;
                         if (count >= 120) break; // Seed first 120 books for speed and rich catalog
                     }
 
-                    await db.SaveChangesAsync();
+                    await catalogDb.SaveChangesAsync();
                     logger.LogInformation("Seeded {Count} books into catalog successfully.", count);
                 }
             }

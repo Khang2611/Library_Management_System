@@ -1,4 +1,4 @@
-using FluentValidation;
+﻿using FluentValidation;
 using Library.Modules.Core.Identity.Data;
 using Library.Modules.Core.Identity.Services;
 using Library.Modules.Core.Shared;
@@ -9,11 +9,11 @@ namespace Library.Modules.Core.Identity.Features.Login;
 
 public sealed class LoginHandler : IRequestHandler<LoginRequest, ApiResponse<LoginResponse>>
 {
-    private readonly AppDbContext _db;
+    private readonly IdentityDbContext _db;
     private readonly IValidator<LoginRequest> _validator;
     private readonly JwtTokenService _jwt;
 
-    public LoginHandler(AppDbContext db, IValidator<LoginRequest> validator, JwtTokenService jwt)
+    public LoginHandler(IdentityDbContext db, IValidator<LoginRequest> validator, JwtTokenService jwt)
     {
         _db = db;
         _validator = validator;
@@ -22,37 +22,37 @@ public sealed class LoginHandler : IRequestHandler<LoginRequest, ApiResponse<Log
 
     public async Task<ApiResponse<LoginResponse>> Handle(LoginRequest request, CancellationToken ct)
     {
-        // ── Validate ──────────────────────────────────────────────────────────
+        // â”€â”€ Validate â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         var validation = await _validator.ValidateAsync(request, ct);
         if (!validation.IsValid)
             return ApiResponse<LoginResponse>.Fail(
                 string.Join("; ", validation.Errors.Select(e => e.ErrorMessage)));
 
-        // ── Find account ──────────────────────────────────────────────────────
+        // â”€â”€ Find account â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         var normalizedUsername = request.Username.Trim().ToLowerInvariant();
         var account = await _db.Accounts
             .FirstOrDefaultAsync(a => a.Username == normalizedUsername, ct);
 
         if (account is null)
-            return ApiResponse<LoginResponse>.Fail("Tên đăng nhập hoặc mật khẩu không đúng.");
+            return ApiResponse<LoginResponse>.Fail("TĂªn Ä‘Äƒng nháº­p hoáº·c máº­t kháº©u khĂ´ng Ä‘Ăºng.");
 
-        // ── Check status ──────────────────────────────────────────────────────
+        // â”€â”€ Check status â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         if (account.Status == AccountStatus.Locked)
-            return ApiResponse<LoginResponse>.Fail("Tài khoản đã bị khóa. Vui lòng liên hệ quản trị viên.");
+            return ApiResponse<LoginResponse>.Fail("TĂ i khoáº£n Ä‘Ă£ bá»‹ khĂ³a. Vui lĂ²ng liĂªn há»‡ quáº£n trá»‹ viĂªn.");
 
         if (account.Status == AccountStatus.Inactive)
-            return ApiResponse<LoginResponse>.Fail("Tài khoản đã bị vô hiệu hóa.");
+            return ApiResponse<LoginResponse>.Fail("TĂ i khoáº£n Ä‘Ă£ bá»‹ vĂ´ hiá»‡u hĂ³a.");
 
-        // ── Verify password ───────────────────────────────────────────────────
+        // â”€â”€ Verify password â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         if (!BCrypt.Net.BCrypt.Verify(request.Password, account.PasswordHash))
-            return ApiResponse<LoginResponse>.Fail("Tên đăng nhập hoặc mật khẩu không đúng.");
+            return ApiResponse<LoginResponse>.Fail("TĂªn Ä‘Äƒng nháº­p hoáº·c máº­t kháº©u khĂ´ng Ä‘Ăºng.");
 
-        // ── Generate tokens ───────────────────────────────────────────────────
+        // â”€â”€ Generate tokens â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         var accessToken = _jwt.GenerateAccessToken(account);
         var refreshToken = _jwt.GenerateRefreshToken();
         var refreshExpiry = _jwt.GetRefreshTokenExpiry();
 
-        // ── Persist login session ─────────────────────────────────────────────
+        // â”€â”€ Persist login session â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         var session = new LoginSession
         {
             AccountId = account.Id,
@@ -68,7 +68,7 @@ public sealed class LoginHandler : IRequestHandler<LoginRequest, ApiResponse<Log
 
         await _db.SaveChangesAsync(ct);
 
-        // ── Build response ────────────────────────────────────────────────────
+        // â”€â”€ Build response â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         var accessExpiryMinutes = 60; // matches JwtSettings:AccessTokenExpiryMinutes default
         var response = new LoginResponse(
             AccountId: account.Id,
@@ -84,3 +84,4 @@ public sealed class LoginHandler : IRequestHandler<LoginRequest, ApiResponse<Log
         return ApiResponse<LoginResponse>.Ok(response);
     }
 }
+

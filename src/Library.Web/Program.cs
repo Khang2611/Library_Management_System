@@ -10,6 +10,13 @@ using Library.Modules.Core.Catalog.Features.SearchBook;
 using Library.Modules.Core.Catalog.Features.ManageCopies;
 using Library.Modules.Core.Billing.Features.IssueFine;
 using Library.Modules.Core.Billing.Features.PayFine;
+using Library.Modules.Core.Billing.Data;
+using Library.Modules.Core.Catalog.Data;
+using Library.Modules.Core.Circulation.Data;
+using Library.Modules.Core.Identity.Data;
+using Library.Modules.Core.Notifications.Data;
+using Library.Modules.Core.Search.Data;
+using Library.Modules.Core.Shared.Persistence;
 using Library.Web;
 using MediatR;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -18,16 +25,27 @@ using Microsoft.IdentityModel.Tokens;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// ── Database ──────────────────────────────────────────────────────────────────
-builder.Services.AddDbContext<AppDbContext>(opt =>
-    opt.UseSqlServer(builder.Configuration.GetConnectionString("Default")));
+// ── Database & Persistence ───────────────────────────────────────────────────
+var connectionString = builder.Configuration.GetConnectionString("Default")
+    ?? throw new InvalidOperationException("Connection string 'Default' is not configured.");
+
+builder.Services.AddSharedPersistence(connectionString);
+builder.Services.AddModuleDbContext<IdentityDbContext>();
+builder.Services.AddModuleDbContext<CatalogDbContext>();
+builder.Services.AddModuleDbContext<CirculationDbContext>();
+builder.Services.AddModuleDbContext<BillingDbContext>();
+builder.Services.AddModuleDbContext<NotificationsDbContext>();
+builder.Services.AddModuleDbContext<SearchDbContext>();
 
 // ── MediatR — scan toàn bộ assembly của Library.Modules.Core ──────────────────
 builder.Services.AddMediatR(cfg =>
-    cfg.RegisterServicesFromAssembly(typeof(AppDbContext).Assembly));
+{
+    cfg.RegisterServicesFromAssembly(typeof(IdentityDbContext).Assembly);
+    cfg.AddOpenBehavior(typeof(TransactionBehavior<,>));
+});
 
 // ── FluentValidation — auto-register tất cả validators từ Core assembly ───────
-builder.Services.AddValidatorsFromAssembly(typeof(AppDbContext).Assembly);
+builder.Services.AddValidatorsFromAssembly(typeof(IdentityDbContext).Assembly);
 
 // ── Identity Services ─────────────────────────────────────────────────────────
 builder.Services.AddSingleton<JwtTokenService>();
@@ -126,14 +144,30 @@ Library.Modules.Core.Billing.Features.GetAllFines.GetAllFinesEndpoint.Map(app);
 // ── Database Schema Migration & Default Admin Seeding ─────────────────────────
 using (var scope = app.Services.CreateScope())
 {
-    var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+    var identityDb = scope.ServiceProvider.GetRequiredService<IdentityDbContext>();
+    var catalogDb = scope.ServiceProvider.GetRequiredService<CatalogDbContext>();
+    var circulationDb = scope.ServiceProvider.GetRequiredService<CirculationDbContext>();
+    var billingDb = scope.ServiceProvider.GetRequiredService<BillingDbContext>();
+    var notificationsDb = scope.ServiceProvider.GetRequiredService<NotificationsDbContext>();
+    var searchDb = scope.ServiceProvider.GetRequiredService<SearchDbContext>();
+
     try
     {
-        await db.Database.MigrateAsync();
+        await identityDb.Database.MigrateAsync();
+        await catalogDb.Database.MigrateAsync();
+        await circulationDb.Database.MigrateAsync();
+        await billingDb.Database.MigrateAsync();
+        await notificationsDb.Database.MigrateAsync();
+        await searchDb.Database.MigrateAsync();
     }
     catch
     {
-        await db.Database.EnsureCreatedAsync();
+        await identityDb.Database.EnsureCreatedAsync();
+        await catalogDb.Database.EnsureCreatedAsync();
+        await circulationDb.Database.EnsureCreatedAsync();
+        await billingDb.Database.EnsureCreatedAsync();
+        await notificationsDb.Database.EnsureCreatedAsync();
+        await searchDb.Database.EnsureCreatedAsync();
     }
 
     var sender = scope.ServiceProvider.GetRequiredService<ISender>();

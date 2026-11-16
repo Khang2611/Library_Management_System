@@ -13,7 +13,8 @@ public record CopyInfo(
     string BookTitle,
     bool BookIsActive,
     CopyCondition Condition,
-    CopyStatus Status
+    CopyStatus Status,
+    string? LocationLabel = null
 );
 
 public record GetCopyInfosQuery(IReadOnlyCollection<int> CopyIds)
@@ -24,7 +25,7 @@ public record BookInfo(int BookId, string Title, bool IsActive);
 public record GetBookInfosQuery(IReadOnlyCollection<int> BookIds)
     : IRequest<IReadOnlyDictionary<int, BookInfo>>;
 
-public record FindAvailableCopyQuery(int BookId, int? PreferredCopyId) : IRequest<CopyInfo?>;
+public record FindAvailableCopyQuery(int BookId, int? PreferredCopyId = null) : IRequest<CopyInfo?>;
 
 public record SetCopyStatusCommand(
     int CopyId,
@@ -32,3 +33,7 @@ public record SetCopyStatusCommand(
     CopyStatus? NewStatus = null,
     CopyCondition? NewCondition = null
 ) : IRequest<bool>;
+
+public record GetActiveBookCopiesCountQuery : IRequest<int>;
+public record GetActiveBookTitlesCountQuery : IRequest<int>;
+public record SearchCopyIdsByBarcodeQuery(string Keyword) : IRequest<IReadOnlyList<int>>;

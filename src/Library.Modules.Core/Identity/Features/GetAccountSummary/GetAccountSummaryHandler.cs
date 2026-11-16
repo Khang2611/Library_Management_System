@@ -1,4 +1,4 @@
-using Library.Modules.Core.Identity.Contracts;
+﻿using Library.Modules.Core.Identity.Contracts;
 using Library.Modules.Core.Identity.Data;
 using Library.Modules.Core.Shared;
 using MediatR;
@@ -8,9 +8,9 @@ namespace Library.Modules.Core.Identity.Features.GetAccountSummary;
 
 public sealed class GetAccountSummaryHandler : IRequestHandler<GetAccountSummaryQuery, AccountSummary?>
 {
-    private readonly AppDbContext _db;
+    private readonly IdentityDbContext _db;
 
-    public GetAccountSummaryHandler(AppDbContext db)
+    public GetAccountSummaryHandler(IdentityDbContext db)
     {
         _db = db;
     }
@@ -24,4 +24,5 @@ public sealed class GetAccountSummaryHandler : IRequestHandler<GetAccountSummary
             .FirstOrDefaultAsync(ct);
     }
 }
+
 

@@ -1,5 +1,5 @@
 using Library.Modules.Core.Catalog.Contracts;
-using Library.Modules.Core.Shared;
+using Library.Modules.Core.Catalog.Data;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 
@@ -7,9 +7,9 @@ namespace Library.Modules.Core.Catalog.Features.GetCopyInfos;
 
 public sealed class GetCopyInfosHandler : IRequestHandler<GetCopyInfosQuery, IReadOnlyDictionary<int, CopyInfo>>
 {
-    private readonly AppDbContext _db;
+    private readonly CatalogDbContext _db;
 
-    public GetCopyInfosHandler(AppDbContext db)
+    public GetCopyInfosHandler(CatalogDbContext db)
     {
         _db = db;
     }
@@ -23,6 +23,7 @@ public sealed class GetCopyInfosHandler : IRequestHandler<GetCopyInfosQuery, IRe
         var copies = await _db.BookCopies
             .AsNoTracking()
             .Include(c => c.Book)
+            .Include(c => c.Location)
             .Where(c => distinctIds.Contains(c.Id))
             .Select(c => new CopyInfo(
                 c.Id,
@@ -31,7 +32,8 @@ public sealed class GetCopyInfosHandler : IRequestHandler<GetCopyInfosQuery, IRe
                 c.Book.Title,
                 c.Book.Status == BookStatus.Active,
                 c.Condition,
-                c.Status))
+                c.Status,
+                c.Location != null ? $"{c.Location.Aisle}-{c.Location.Shelf}-{c.Location.RowLevel}" : null))
             .ToDictionaryAsync(c => c.CopyId, ct);
 
         return copies;

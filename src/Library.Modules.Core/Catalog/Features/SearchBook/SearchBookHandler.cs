@@ -1,4 +1,4 @@
-using FluentValidation;
+﻿using FluentValidation;
 using Library.Modules.Core.Catalog.Contracts;
 using Library.Modules.Core.Catalog.Data;
 using Library.Modules.Core.Shared;
@@ -9,10 +9,10 @@ namespace Library.Modules.Core.Catalog.Features.SearchBook;
 
 public sealed class SearchBookHandler : IRequestHandler<SearchBookRequest, ApiResponse<SearchBookResult>>
 {
-    private readonly AppDbContext _db;
+    private readonly CatalogDbContext _db;
     private readonly IValidator<SearchBookRequest> _validator;
 
-    public SearchBookHandler(AppDbContext db, IValidator<SearchBookRequest> validator)
+    public SearchBookHandler(CatalogDbContext db, IValidator<SearchBookRequest> validator)
     {
         _db = db;
         _validator = validator;
@@ -20,18 +20,18 @@ public sealed class SearchBookHandler : IRequestHandler<SearchBookRequest, ApiRe
 
     public async Task<ApiResponse<SearchBookResult>> Handle(SearchBookRequest request, CancellationToken ct)
     {
-        // ── Validate input ────────────────────────────────────────────────────
+        // â”€â”€ Validate input â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         var validation = await _validator.ValidateAsync(request, ct);
         if (!validation.IsValid)
             return ApiResponse<SearchBookResult>.Fail(
                 string.Join("; ", validation.Errors.Select(e => e.ErrorMessage)));
 
-        // ── Build base query (only Active books) ──────────────────────────────
+        // â”€â”€ Build base query (only Active books) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         IQueryable<Book> query = _db.Books
             .Where(b => b.Status == BookStatus.Active)
             .AsNoTracking();
 
-        // ── Apply filters ─────────────────────────────────────────────────────
+        // â”€â”€ Apply filters â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         if (!string.IsNullOrWhiteSpace(request.Keyword))
         {
             var keyword = request.Keyword.Trim().ToLower();
@@ -64,10 +64,10 @@ public sealed class SearchBookHandler : IRequestHandler<SearchBookRequest, ApiRe
             query = query.Where(b => b.PublishedYear == request.PublishedYear.Value);
         }
 
-        // ── Count total before pagination ─────────────────────────────────────
+        // â”€â”€ Count total before pagination â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         var totalCount = await query.CountAsync(ct);
 
-        // ── Project + paginate ────────────────────────────────────────────────
+        // â”€â”€ Project + paginate â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         var items = await query
             .OrderByDescending(b => b.CreatedAt)
             .ThenBy(b => b.Title)

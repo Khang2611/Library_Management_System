@@ -9,10 +9,10 @@ namespace Library.Modules.Core.Billing.Features.PayFine;
 
 public sealed class PayFineHandler : IRequestHandler<PayFineRequest, ApiResponse<bool>>
 {
-    private readonly AppDbContext _db;
+    private readonly BillingDbContext _db;
     private readonly IValidator<PayFineRequest> _validator;
 
-    public PayFineHandler(AppDbContext db, IValidator<PayFineRequest> validator)
+    public PayFineHandler(BillingDbContext db, IValidator<PayFineRequest> validator)
     {
         _db = db;
         _validator = validator;

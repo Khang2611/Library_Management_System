@@ -1,3 +1,4 @@
+﻿using Library.Modules.Core.Identity.Data;
 using Library.Modules.Core.Identity.Contracts;
 using Library.Modules.Core.Shared;
 using MediatR;
@@ -7,9 +8,9 @@ namespace Library.Modules.Core.Identity.Features.GetAccountNames;
 
 public sealed class GetAccountNamesHandler : IRequestHandler<GetAccountNamesQuery, IReadOnlyDictionary<int, string>>
 {
-    private readonly AppDbContext _db;
+    private readonly IdentityDbContext _db;
 
-    public GetAccountNamesHandler(AppDbContext db)
+    public GetAccountNamesHandler(IdentityDbContext db)
     {
         _db = db;
     }
@@ -28,4 +29,5 @@ public sealed class GetAccountNamesHandler : IRequestHandler<GetAccountNamesQuer
         return dict;
     }
 }
+
 
