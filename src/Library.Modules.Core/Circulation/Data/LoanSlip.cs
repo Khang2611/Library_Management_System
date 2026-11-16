@@ -1,5 +1,3 @@
-using System.ComponentModel.DataAnnotations.Schema;
-
 namespace Library.Modules.Core.Circulation.Data;
 
 /// <summary>
@@ -23,14 +21,7 @@ public class LoanSlip
 
     public DateTime? UpdatedAt { get; set; }
     public int? UpdatedBy { get; set; }
-    public byte[] RowVersion { get; set; } = [];
-
-    /// <summary>
-    /// Calculated or runtime-only property. Actual return dates are stored on individual LoanSlipDetails.
-    /// Not mapped to the database table.
-    /// </summary>
-    [NotMapped]
-    public DateOnly? ReturnedDate { get; set; }
+    public byte[] RowVersion { get; set; } = default!;
 
     // Navigation within Circulation context
     public ICollection<LoanSlipDetail> Details { get; set; } = [];

@@ -13,13 +13,12 @@ public static class ReportIncidentEndpoint
     {
         app.MapPost("/api/circulation/incidents", async (ReportIncidentRequest req, ClaimsPrincipal user, IMediator mediator, CancellationToken ct) =>
         {
-            var staffId = user.GetAccountId();
-            var finalReq = req with { LibrarianId = staffId };
+            var finalReq = req with { LibrarianId = user.GetAccountId() };
             return Results.Ok(await mediator.Send(finalReq, ct));
         })
-        .WithTags("Circulation")
-        .WithSummary("Report a damaged or lost book incident (Staff only)")
-        .RequireAuthorization("StaffOnly");
+            .WithTags("Circulation")
+            .WithSummary("Report a damaged or lost book incident (Staff only)")
+            .RequireAuthorization("StaffOnly");
         return app;
     }
 }

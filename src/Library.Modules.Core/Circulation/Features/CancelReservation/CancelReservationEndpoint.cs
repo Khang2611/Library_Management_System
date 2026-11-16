@@ -13,7 +13,7 @@ public static class CancelReservationEndpoint
     {
         app.MapDelete("/api/circulation/reservations/{reservationId:long}", async (long reservationId, ClaimsPrincipal user, IMediator mediator, CancellationToken ct) =>
         {
-            var req = new CancelReservationRequest(user.GetAccountId())
+            var req = new CancelReservationRequest(user.GetAccountId(), user.IsStaff())
             {
                 ReservationId = reservationId
             };

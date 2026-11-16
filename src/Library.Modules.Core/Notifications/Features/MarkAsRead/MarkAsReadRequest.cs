@@ -3,5 +3,4 @@ using MediatR;
 
 namespace Library.Modules.Core.Notifications.Features.MarkAsRead;
 
-public record MarkAsReadRequest(long NotificationId, int AccountId)
-    : IRequest<ApiResponse<bool>>;
+public record MarkAsReadRequest(long NotificationId, int AccountId) : IRequest<ApiResponse<bool>>;

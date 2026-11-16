@@ -1,4 +1,4 @@
-using Library.Modules.Core.Circulation.Contracts;
+using Library.Modules.Core.Identity.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -8,14 +8,7 @@ public class IncidentConfiguration : IEntityTypeConfiguration<Incident>
 {
     public void Configure(EntityTypeBuilder<Incident> builder)
     {
-        builder.ToTable("Incidents", t =>
-        {
-            t.HasCheckConstraint("CK_Incidents_IncidentType", "[IncidentType] IN (N'Lost', N'Damaged')");
-            t.HasCheckConstraint("CK_Incidents_Severity", "[Severity] IN (N'Minor', N'Major', N'TotalLoss')");
-            t.HasCheckConstraint("CK_Incidents_CompensationAmount", "[CompensationAmount] >= 0");
-            t.HasCheckConstraint("CK_Incidents_Status", "[Status] IN (N'Recorded', N'Resolved', N'Cancelled')");
-        });
-
+        builder.ToTable("Incidents");
         builder.HasKey(i => i.Id);
 
         builder.Property(i => i.Description).HasMaxLength(1000);
@@ -37,12 +30,14 @@ public class IncidentConfiguration : IEntityTypeConfiguration<Incident>
             .HasMaxLength(20)
             .HasDefaultValue(IncidentStatus.Recorded);
 
-        // Indexes
-        builder.HasIndex(i => i.LoanSlipDetailId)
-            .HasDatabaseName("IX_Incidents_LoanSlipDetailId");
-
-        builder.HasIndex(i => i.LibrarianId)
-            .HasDatabaseName("IX_Incidents_LibrarianId");
+        // Check constraints
+        builder.ToTable("Incidents", t =>
+        {
+            t.HasCheckConstraint("CK_Incidents_CompensationAmount", "[CompensationAmount] >= 0");
+            t.HasCheckConstraint("CK_Incidents_IncidentType", "[IncidentType] IN (N'Lost', N'Damaged')");
+            t.HasCheckConstraint("CK_Incidents_Severity", "[Severity] IN (N'Minor', N'Major', N'TotalLoss')");
+            t.HasCheckConstraint("CK_Incidents_Status", "[Status] IN (N'Recorded', N'Resolved', N'Cancelled')");
+        });
 
         builder.HasOne(i => i.LoanSlipDetail)
             .WithMany(d => d.Incidents)
