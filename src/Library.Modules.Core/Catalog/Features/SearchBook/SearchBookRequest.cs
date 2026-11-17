@@ -1,3 +1,4 @@
+using Library.Modules.Core.Catalog.Data;
 using Library.Modules.Core.Shared;
 using MediatR;
 
@@ -10,7 +11,9 @@ public record SearchBookRequest(
     string? Language,
     short? PublishedYear,
     int Page = 1,
-    int PageSize = 20
+    int PageSize = 20,
+    BookStatus? Status = null,
+    bool IncludeInactive = false
 ) : IRequest<ApiResponse<SearchBookResult>>;
 
 public record SearchBookResult(List<BookSummary> Items, int TotalCount);
@@ -22,5 +25,10 @@ public record BookSummary(
     string? Publisher,
     short? PublishedYear,
     string? CoverImageUrl,
-    int AvailableCopies
+    int AvailableCopies,
+    int TotalCopies = 0,
+    List<string>? Authors = null,
+    List<string>? Categories = null,
+    string? Description = null,
+    string Status = "Active"
 );

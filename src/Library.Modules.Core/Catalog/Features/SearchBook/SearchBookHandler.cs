@@ -1,5 +1,4 @@
-﻿using FluentValidation;
-using Library.Modules.Core.Catalog.Contracts;
+using FluentValidation;
 using Library.Modules.Core.Catalog.Data;
 using Library.Modules.Core.Shared;
 using MediatR;
@@ -20,25 +19,32 @@ public sealed class SearchBookHandler : IRequestHandler<SearchBookRequest, ApiRe
 
     public async Task<ApiResponse<SearchBookResult>> Handle(SearchBookRequest request, CancellationToken ct)
     {
-        // â”€â”€ Validate input â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+        // ── Validate input ────────────────────────────────────────────────────
         var validation = await _validator.ValidateAsync(request, ct);
         if (!validation.IsValid)
             return ApiResponse<SearchBookResult>.Fail(
                 string.Join("; ", validation.Errors.Select(e => e.ErrorMessage)));
 
-        // â”€â”€ Build base query (only Active books) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-        IQueryable<Book> query = _db.Books
-            .Where(b => b.Status == BookStatus.Active)
-            .AsNoTracking();
+        // ── Build base query (public sees Active only; staff can filter/include Inactive) ──
+        IQueryable<Book> query = _db.Books.AsNoTracking();
+        if (request.Status.HasValue)
+        {
+            query = query.Where(b => b.Status == request.Status.Value);
+        }
+        else if (!request.IncludeInactive)
+        {
+            query = query.Where(b => b.Status == BookStatus.Active);
+        }
 
-        // â”€â”€ Apply filters â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+        // ── Apply filters (sử dụng EF.Functions.Like để SQL Server dùng được index) ─────
         if (!string.IsNullOrWhiteSpace(request.Keyword))
         {
-            var keyword = request.Keyword.Trim().ToLower();
+            var keyword = request.Keyword.Trim();
             query = query.Where(b =>
-                b.Title.ToLower().Contains(keyword) ||
-                (b.Isbn != null && b.Isbn.ToLower().Contains(keyword)) ||
-                (b.Description != null && b.Description.ToLower().Contains(keyword)));
+                EF.Functions.Like(b.Title, $"%{keyword}%") ||
+                (b.Isbn != null && EF.Functions.Like(b.Isbn, $"%{keyword}%")) ||
+                (b.Description != null && EF.Functions.Like(b.Description, $"%{keyword}%")) ||
+                b.BookAuthors.Any(ba => EF.Functions.Like(ba.Author.Name, $"%{keyword}%")));
         }
 
         if (request.AuthorId.HasValue)
@@ -55,8 +61,8 @@ public sealed class SearchBookHandler : IRequestHandler<SearchBookRequest, ApiRe
 
         if (!string.IsNullOrWhiteSpace(request.Language))
         {
-            var lang = request.Language.Trim().ToLower();
-            query = query.Where(b => b.Language != null && b.Language.ToLower() == lang);
+            var lang = request.Language.Trim();
+            query = query.Where(b => b.Language != null && EF.Functions.Like(b.Language, lang));
         }
 
         if (request.PublishedYear.HasValue)
@@ -64,10 +70,10 @@ public sealed class SearchBookHandler : IRequestHandler<SearchBookRequest, ApiRe
             query = query.Where(b => b.PublishedYear == request.PublishedYear.Value);
         }
 
-        // â”€â”€ Count total before pagination â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+        // ── Count total before pagination ─────────────────────────────────────
         var totalCount = await query.CountAsync(ct);
 
-        // â”€â”€ Project + paginate â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+        // ── Project + paginate ────────────────────────────────────────────────
         var items = await query
             .OrderByDescending(b => b.CreatedAt)
             .ThenBy(b => b.Title)
@@ -80,7 +86,12 @@ public sealed class SearchBookHandler : IRequestHandler<SearchBookRequest, ApiRe
                 b.Publisher,
                 b.PublishedYear,
                 b.CoverImageUrl,
-                b.Copies.Count(c => c.Status == CopyStatus.Available)
+                b.Copies.Count(c => c.Status == CopyStatus.Available),
+                b.Copies.Count(),
+                b.BookAuthors.Select(ba => ba.Author.Name).ToList(),
+                b.BookCategories.Select(bc => bc.Category.Name).ToList(),
+                b.Description,
+                b.Status.ToString()
             ))
             .ToListAsync(ct);
 

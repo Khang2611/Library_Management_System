@@ -1,5 +1,3 @@
-using Library.Modules.Core.Catalog.Contracts;
-
 namespace Library.Modules.Core.Catalog.Data;
 
 public class Book
@@ -20,10 +18,13 @@ public class Book
     public int? CreatedBy { get; set; }
     public DateTime? UpdatedAt { get; set; }
     public int? UpdatedBy { get; set; }
-    public byte[] RowVersion { get; set; } = [];
+    public byte[] RowVersion { get; set; } = default!;
 
     // Navigation (within Catalog context)
     public ICollection<BookAuthor> BookAuthors { get; set; } = [];
     public ICollection<BookCategory> BookCategories { get; set; } = [];
     public ICollection<BookCopy> Copies { get; set; } = [];
 }
+
+/// <summary>ACTIVE → Active | INACTIVE → Inactive</summary>
+public enum BookStatus { Active, Inactive }

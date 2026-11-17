@@ -1,4 +1,4 @@
-﻿using FluentValidation;
+using FluentValidation;
 using Library.Modules.Core.Catalog.Data;
 using Library.Modules.Core.Shared;
 using MediatR;
@@ -35,6 +35,28 @@ public sealed class UpdateBookHandler : IRequestHandler<UpdateBookRequest, ApiRe
         {
             if (await _db.Books.AnyAsync(b => b.Isbn == request.Isbn, ct))
                 return ApiResponse<bool>.Fail("ISBN đã tồn tại ở một cuốn sách khác.");
+        }
+
+        // ── Verify AuthorIds exist ────────────────────────────────────────────
+        if (request.AuthorIds.Count > 0)
+        {
+            var distinctAuthorIds = request.AuthorIds.Distinct().ToList();
+            var existingAuthorCount = await _db.Authors
+                .CountAsync(a => distinctAuthorIds.Contains(a.Id), ct);
+
+            if (existingAuthorCount != distinctAuthorIds.Count)
+                return ApiResponse<bool>.Fail("Một hoặc nhiều tác giả không tồn tại.");
+        }
+
+        // ── Verify CategoryIds exist ──────────────────────────────────────────
+        if (request.CategoryIds.Count > 0)
+        {
+            var distinctCategoryIds = request.CategoryIds.Distinct().ToList();
+            var existingCategoryCount = await _db.Categories
+                .CountAsync(c => distinctCategoryIds.Contains(c.Id), ct);
+
+            if (existingCategoryCount != distinctCategoryIds.Count)
+                return ApiResponse<bool>.Fail("Một hoặc nhiều thể loại không tồn tại.");
         }
 
         book.Title = request.Title.Trim();
