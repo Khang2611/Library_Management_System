@@ -1,5 +1,4 @@
 using FluentValidation;
-using Library.Modules.Core.Billing.Contracts;
 using Library.Modules.Core.Billing.Data;
 using Library.Modules.Core.Shared;
 using Library.Modules.Core.Shared.Events;
@@ -9,11 +8,11 @@ namespace Library.Modules.Core.Billing.Features.IssueFine;
 
 public sealed class IssueFineHandler : IRequestHandler<IssueFineRequest, ApiResponse<long>>
 {
-    private readonly AppDbContext _db;
+    private readonly BillingDbContext _db;
     private readonly IValidator<IssueFineRequest> _validator;
     private readonly IMediator _mediator;
 
-    public IssueFineHandler(AppDbContext db, IValidator<IssueFineRequest> validator, IMediator mediator)
+    public IssueFineHandler(BillingDbContext db, IValidator<IssueFineRequest> validator, IMediator mediator)
     {
         _db = db;
         _validator = validator;
@@ -34,7 +33,7 @@ public sealed class IssueFineHandler : IRequestHandler<IssueFineRequest, ApiResp
             Amount = request.Amount,
             PaymentDueDate = request.PaymentDueDate,
             IssuedAt = DateTime.UtcNow,
-            Status = request.Amount == 0 ? FineStatus.Paid : FineStatus.Unpaid
+            Status = FineStatus.Unpaid
         };
 
         _db.Set<Fine>().Add(fine);

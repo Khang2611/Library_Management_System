@@ -25,12 +25,9 @@ public class Fine
     public DateTime IssuedAt { get; set; } = DateTime.UtcNow;
     public DateOnly? PaymentDueDate { get; set; }
     public FineStatus Status { get; set; } = FineStatus.Unpaid;
-
     public DateTime? UpdatedAt { get; set; }
     public int? UpdatedBy { get; set; }
 
     // Navigation within Billing context
     public ICollection<FinePayment> Payments { get; set; } = [];
 }
-
-
