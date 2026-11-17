@@ -1,6 +1,5 @@
-﻿using Library.Modules.Core.Identity.Data;
 using Library.Modules.Core.Identity.Contracts;
-using Library.Modules.Core.Shared;
+using Library.Modules.Core.Identity.Data;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 
@@ -10,24 +9,19 @@ public sealed class GetAccountNamesHandler : IRequestHandler<GetAccountNamesQuer
 {
     private readonly IdentityDbContext _db;
 
-    public GetAccountNamesHandler(IdentityDbContext db)
-    {
-        _db = db;
-    }
+    public GetAccountNamesHandler(IdentityDbContext db) => _db = db;
 
     public async Task<IReadOnlyDictionary<int, string>> Handle(GetAccountNamesQuery request, CancellationToken ct)
     {
-        if (request.AccountIds == null || request.AccountIds.Count == 0)
+        if (request.AccountIds.Count == 0)
             return new Dictionary<int, string>();
 
-        var distinctIds = request.AccountIds.Distinct().ToList();
-        var dict = await _db.Accounts
-            .AsNoTracking()
-            .Where(a => distinctIds.Contains(a.Id))
+        var accounts = await _db.Accounts
+            .Where(a => request.AccountIds.Contains(a.Id))
+            .Select(a => new { a.Id, a.FullName })
             .ToDictionaryAsync(a => a.Id, a => a.FullName, ct);
 
-        return dict;
+        return accounts;
     }
 }
-
 

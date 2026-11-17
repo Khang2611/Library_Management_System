@@ -1,9 +1,13 @@
-﻿using MediatR;
+using Library.Modules.Core.Identity.Data;
+using MediatR;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
 
 namespace Library.Modules.Core.Identity.Features.ManageUsers;
+
+public record ChangeRoleBody(AccountRole? Role, AccountRole? NewRole);
+public record ChangeStatusBody(AccountStatus? Status, AccountStatus? NewStatus);
 
 public static class ManageUsersEndpoint
 {
@@ -16,15 +20,21 @@ public static class ManageUsersEndpoint
             .WithSummary("Get list of users (Staff & Admin)")
             .RequireAuthorization("StaffOnly");
 
-        group.MapPatch("/{id:int}/role", async (int id, ChangeRoleRequest req, IMediator mediator, CancellationToken ct) =>
-            Results.Ok(await mediator.Send(req with { AccountId = id }, ct)))
-            .WithSummary("Change user role (Admin only)")
-            .RequireAuthorization("AdminOnly");
+        group.MapPatch("/{id:int}/role", async (int id, ChangeRoleBody body, IMediator mediator, CancellationToken ct) =>
+        {
+            var targetRole = body.NewRole ?? body.Role ?? AccountRole.Reader;
+            return Results.Ok(await mediator.Send(new ChangeRoleRequest(id, targetRole), ct));
+        })
+        .WithSummary("Change user role (Admin only)")
+        .RequireAuthorization("AdminOnly");
 
-        group.MapPatch("/{id:int}/status", async (int id, ChangeStatusRequest req, IMediator mediator, CancellationToken ct) =>
-            Results.Ok(await mediator.Send(req with { AccountId = id }, ct)))
-            .WithSummary("Change user status (Admin only)")
-            .RequireAuthorization("AdminOnly");
+        group.MapPatch("/{id:int}/status", async (int id, ChangeStatusBody body, IMediator mediator, CancellationToken ct) =>
+        {
+            var targetStatus = body.NewStatus ?? body.Status ?? AccountStatus.Active;
+            return Results.Ok(await mediator.Send(new ChangeStatusRequest(id, targetStatus), ct));
+        })
+        .WithSummary("Change user status (Admin only)")
+        .RequireAuthorization("AdminOnly");
 
         return app;
     }

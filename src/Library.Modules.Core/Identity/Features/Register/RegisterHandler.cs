@@ -1,4 +1,4 @@
-﻿using FluentValidation;
+using FluentValidation;
 using Library.Modules.Core.Identity.Data;
 using Library.Modules.Core.Shared;
 using MediatR;
@@ -19,30 +19,30 @@ public sealed class RegisterHandler : IRequestHandler<RegisterRequest, ApiRespon
 
     public async Task<ApiResponse<int>> Handle(RegisterRequest request, CancellationToken ct)
     {
-        // â”€â”€ Validate input â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+        // ── Validate input ────────────────────────────────────────────────────
         var validation = await _validator.ValidateAsync(request, ct);
         if (!validation.IsValid)
             return ApiResponse<int>.Fail(
                 string.Join("; ", validation.Errors.Select(e => e.ErrorMessage)));
 
-        // â”€â”€ Check duplicates â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+        // ── Check duplicates ──────────────────────────────────────────────────
         var normalizedUsername = request.Username.Trim().ToLowerInvariant();
         var normalizedEmail = request.Email.Trim().ToLowerInvariant();
 
         if (await _db.Accounts.AnyAsync(a => a.Username == normalizedUsername, ct))
-            return ApiResponse<int>.Fail("TĂªn Ä‘Äƒng nháº­p Ä‘Ă£ tá»“n táº¡i.");
+            return ApiResponse<int>.Fail("Tên đăng nhập đã tồn tại.");
 
         if (await _db.Accounts.AnyAsync(a => a.Email == normalizedEmail, ct))
-            return ApiResponse<int>.Fail("Email Ä‘Ă£ Ä‘Æ°á»£c sá»­ dá»¥ng.");
+            return ApiResponse<int>.Fail("Email đã được sử dụng.");
 
         if (!string.IsNullOrWhiteSpace(request.PhoneNumber))
         {
             var phone = request.PhoneNumber.Trim();
             if (await _db.Accounts.AnyAsync(a => a.PhoneNumber == phone, ct))
-                return ApiResponse<int>.Fail("Sá»‘ Ä‘iá»‡n thoáº¡i Ä‘Ă£ Ä‘Æ°á»£c sá»­ dá»¥ng.");
+                return ApiResponse<int>.Fail("Số điện thoại đã được sử dụng.");
         }
 
-        // â”€â”€ Create account â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+        // ── Create account ────────────────────────────────────────────────────
         var account = new Account
         {
             Username = normalizedUsername,
@@ -61,4 +61,3 @@ public sealed class RegisterHandler : IRequestHandler<RegisterRequest, ApiRespon
         return ApiResponse<int>.Ok(account.Id);
     }
 }
-
