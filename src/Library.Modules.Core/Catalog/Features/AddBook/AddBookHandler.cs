@@ -1,5 +1,4 @@
 using FluentValidation;
-using Library.Modules.Core.Catalog.Contracts;
 using Library.Modules.Core.Catalog.Data;
 using Library.Modules.Core.Shared;
 using MediatR;
@@ -37,20 +36,22 @@ public sealed class AddBookHandler : IRequestHandler<AddBookRequest, ApiResponse
         // ── Verify AuthorIds exist ────────────────────────────────────────────
         if (request.AuthorIds.Count > 0)
         {
+            var distinctAuthorIds = request.AuthorIds.Distinct().ToList();
             var existingAuthorCount = await _db.Authors
-                .CountAsync(a => request.AuthorIds.Contains(a.Id), ct);
+                .CountAsync(a => distinctAuthorIds.Contains(a.Id), ct);
 
-            if (existingAuthorCount != request.AuthorIds.Count)
+            if (existingAuthorCount != distinctAuthorIds.Count)
                 return ApiResponse<int>.Fail("Một hoặc nhiều tác giả không tồn tại.");
         }
 
         // ── Verify CategoryIds exist ──────────────────────────────────────────
         if (request.CategoryIds.Count > 0)
         {
+            var distinctCategoryIds = request.CategoryIds.Distinct().ToList();
             var existingCategoryCount = await _db.Categories
-                .CountAsync(c => request.CategoryIds.Contains(c.Id), ct);
+                .CountAsync(c => distinctCategoryIds.Contains(c.Id), ct);
 
-            if (existingCategoryCount != request.CategoryIds.Count)
+            if (existingCategoryCount != distinctCategoryIds.Count)
                 return ApiResponse<int>.Fail("Một hoặc nhiều thể loại không tồn tại.");
         }
 

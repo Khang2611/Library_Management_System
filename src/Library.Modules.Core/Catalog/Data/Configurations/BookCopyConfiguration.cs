@@ -1,4 +1,3 @@
-using Library.Modules.Core.Catalog.Contracts;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -8,18 +7,10 @@ public class BookCopyConfiguration : IEntityTypeConfiguration<BookCopy>
 {
     public void Configure(EntityTypeBuilder<BookCopy> builder)
     {
-        builder.ToTable("BookCopies", t =>
-        {
-            t.HasCheckConstraint("CK_BookCopies_Condition", "[Condition] IN (N'Good', N'MinorDamage', N'MajorDamage', N'Lost')");
-            t.HasCheckConstraint("CK_BookCopies_Status", "[Status] IN (N'Available', N'Reserved', N'Borrowed', N'Maintenance', N'Lost', N'Inactive')");
-        });
-
+        builder.ToTable("BookCopies");
         builder.HasKey(c => c.Id);
 
-        builder.Property(c => c.Barcode)
-            .IsUnicode(false)
-            .HasMaxLength(50)
-            .IsRequired();
+        builder.Property(c => c.Barcode).HasMaxLength(50).IsUnicode(false).IsRequired();
 
         builder.Property(c => c.Condition)
             .HasConversion<string>()
@@ -40,30 +31,27 @@ public class BookCopyConfiguration : IEntityTypeConfiguration<BookCopy>
         builder.Property(c => c.RowVersion)
             .IsRowVersion();
 
-        // Indexes
-        builder.HasIndex(c => c.Barcode)
-            .IsUnique()
-            .HasDatabaseName("UQ_BookCopies_Barcode");
+        builder.HasIndex(c => c.Barcode).IsUnique();
 
-        builder.HasIndex(c => c.BookId)
-            .HasDatabaseName("IX_BookCopies_BookId");
+        // Check constraints
+        builder.ToTable("BookCopies", t =>
+        {
+            t.HasCheckConstraint("CK_BookCopies_Condition", "[Condition] IN (N'Good', N'MinorDamage', N'MajorDamage', N'Lost')");
+            t.HasCheckConstraint("CK_BookCopies_Status", "[Status] IN (N'Available', N'Reserved', N'Borrowed', N'Maintenance', N'Lost', N'Inactive')");
+        });
 
-        builder.HasIndex(c => c.LocationId)
-            .HasDatabaseName("IX_BookCopies_LocationId");
-
-        builder.HasIndex(c => c.Status)
-            .HasDatabaseName("IX_BookCopies_Status");
-
-        // Relationships
         builder.HasOne(c => c.Book)
             .WithMany(b => b.Copies)
             .HasForeignKey(c => c.BookId)
             .OnDelete(DeleteBehavior.Restrict);
 
+        // FK → Locations (nullable, RESTRICT delete)
         builder.HasOne(c => c.Location)
-            .WithMany(l => l.Copies)
+            .WithMany(l => l.BookCopies)
             .HasForeignKey(c => c.LocationId)
             .OnDelete(DeleteBehavior.Restrict)
             .IsRequired(false);
+
+        builder.HasIndex(c => c.LocationId);
     }
 }

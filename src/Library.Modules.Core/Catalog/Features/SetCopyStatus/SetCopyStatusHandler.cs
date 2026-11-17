@@ -1,4 +1,4 @@
-﻿using Library.Modules.Core.Catalog.Contracts;
+using Library.Modules.Core.Catalog.Contracts;
 using Library.Modules.Core.Catalog.Data;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
@@ -9,33 +9,29 @@ public sealed class SetCopyStatusHandler : IRequestHandler<SetCopyStatusCommand,
 {
     private readonly CatalogDbContext _db;
 
-    public SetCopyStatusHandler(CatalogDbContext db)
-    {
-        _db = db;
-    }
+    public SetCopyStatusHandler(CatalogDbContext db) => _db = db;
 
     public async Task<bool> Handle(SetCopyStatusCommand request, CancellationToken ct)
     {
         var copy = await _db.BookCopies.FirstOrDefaultAsync(c => c.Id == request.CopyId, ct);
-        if (copy == null)
-            return false;
+        if (copy is null) return false;
 
-        if (request.ExpectedStatus.HasValue && copy.Status != request.ExpectedStatus.Value)
-            return false;
+        if (request.ExpectedStatus.HasValue && copy.Status != request.ExpectedStatus.Value) return false;
 
-        if (request.NewStatus.HasValue)
-        {
-            copy.Status = request.NewStatus.Value;
-        }
-
-        if (request.NewCondition.HasValue)
-        {
-            copy.Condition = request.NewCondition.Value;
-        }
-
+        copy.Status = request.NewStatus;
+        if (request.NewCondition.HasValue) copy.Condition = request.NewCondition.Value;
         copy.UpdatedAt = DateTime.UtcNow;
 
-        // Do NOT call SaveChangesAsync - caller commits the unit of work.
+        try
+        {
+            await _db.SaveChangesAsync(ct);
+        }
+        catch (DbUpdateConcurrencyException)
+        {
+            return false;
+        }
+
         return true;
     }
 }
+

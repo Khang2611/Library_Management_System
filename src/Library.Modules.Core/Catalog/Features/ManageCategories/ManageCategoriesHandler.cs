@@ -1,4 +1,4 @@
-﻿using FluentValidation;
+using FluentValidation;
 using Library.Modules.Core.Catalog.Data;
 using Library.Modules.Core.Shared;
 using MediatR;
@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Library.Modules.Core.Catalog.Features.ManageCategories;
 
-public sealed class ManageCategoriesHandler :
+public sealed class ManageCategoriesHandler : 
     IRequestHandler<AddCategoryRequest, ApiResponse<int>>,
     IRequestHandler<GetCategoriesRequest, ApiResponse<List<CategoryDto>>>
 {
@@ -32,7 +32,15 @@ public sealed class ManageCategoriesHandler :
 
     public async Task<ApiResponse<List<CategoryDto>>> Handle(GetCategoriesRequest request, CancellationToken ct)
     {
-        var result = await _db.Categories.AsNoTracking().OrderBy(c => c.Name).Select(c => new CategoryDto(c.Id, c.Name, c.Description)).ToListAsync(ct);
+        var result = await _db.Categories
+            .AsNoTracking()
+            .OrderBy(c => c.Name)
+            .Select(c => new CategoryDto(
+                c.Id,
+                c.Name,
+                c.Description,
+                c.BookCategories.Count(bc => bc.Book.Status == BookStatus.Active)))
+            .ToListAsync(ct);
         return ApiResponse<List<CategoryDto>>.Ok(result);
     }
 }

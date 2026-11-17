@@ -1,4 +1,4 @@
-﻿using FluentValidation;
+using FluentValidation;
 using Library.Modules.Core.Catalog.Data;
 using Library.Modules.Core.Shared;
 using MediatR;
@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Library.Modules.Core.Catalog.Features.ManageAuthors;
 
-public sealed class ManageAuthorsHandler :
+public sealed class ManageAuthorsHandler : 
     IRequestHandler<AddAuthorRequest, ApiResponse<int>>,
     IRequestHandler<GetAuthorsRequest, ApiResponse<List<AuthorDto>>>
 {

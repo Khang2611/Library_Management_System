@@ -1,4 +1,3 @@
-using Library.Modules.Core.Catalog.Contracts;
 using Library.Modules.Core.Catalog.Data;
 using Library.Modules.Core.Shared;
 using MediatR;
@@ -11,7 +10,8 @@ public record GetCopiesRequest(int BookId) : IRequest<ApiResponse<List<CopyDetai
 public record CopyDetail(
     int Id,
     string Barcode,
-    string? Location,
+    int? LocationId,
+    string? LocationLabel,
     DateOnly AcquiredDate,
     string Condition,
     string Status
@@ -21,4 +21,10 @@ public record CopyDetail(
 public record UpdateCopyStatusRequest(
     int CopyId,
     CopyStatus NewStatus
+) : IRequest<ApiResponse<bool>>;
+
+/// <summary>Assigns or moves a specific book copy to a shelf location (or clears location when null).</summary>
+public record UpdateCopyLocationRequest(
+    int CopyId,
+    int? LocationId
 ) : IRequest<ApiResponse<bool>>;

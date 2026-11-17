@@ -9,22 +9,17 @@ public sealed class GetCopyInfosHandler : IRequestHandler<GetCopyInfosQuery, IRe
 {
     private readonly CatalogDbContext _db;
 
-    public GetCopyInfosHandler(CatalogDbContext db)
-    {
-        _db = db;
-    }
+    public GetCopyInfosHandler(CatalogDbContext db) => _db = db;
 
     public async Task<IReadOnlyDictionary<int, CopyInfo>> Handle(GetCopyInfosQuery request, CancellationToken ct)
     {
-        if (request.CopyIds == null || request.CopyIds.Count == 0)
+        if (request.CopyIds.Count == 0)
             return new Dictionary<int, CopyInfo>();
 
-        var distinctIds = request.CopyIds.Distinct().ToList();
         var copies = await _db.BookCopies
-            .AsNoTracking()
             .Include(c => c.Book)
             .Include(c => c.Location)
-            .Where(c => distinctIds.Contains(c.Id))
+            .Where(c => request.CopyIds.Contains(c.Id))
             .Select(c => new CopyInfo(
                 c.Id,
                 c.Barcode,
@@ -33,8 +28,10 @@ public sealed class GetCopyInfosHandler : IRequestHandler<GetCopyInfosQuery, IRe
                 c.Book.Status == BookStatus.Active,
                 c.Condition,
                 c.Status,
-                c.Location != null ? $"{c.Location.Aisle}-{c.Location.Shelf}-{c.Location.RowLevel}" : null))
-            .ToDictionaryAsync(c => c.CopyId, ct);
+                c.Location != null
+                    ? c.Location.Aisle + " - " + c.Location.Shelf + " - Tầng " + c.Location.RowLevel
+                    : null))
+            .ToDictionaryAsync(c => c.CopyId, c => c, ct);
 
         return copies;
     }

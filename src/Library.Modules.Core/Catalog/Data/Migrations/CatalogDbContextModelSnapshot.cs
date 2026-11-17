@@ -18,7 +18,7 @@ namespace Library.Modules.Core.Catalog.Data.Migrations
 #pragma warning disable 612, 618
             modelBuilder
                 .HasDefaultSchema("catalog")
-                .HasAnnotation("ProductVersion", "10.0.12")
+                .HasAnnotation("ProductVersion", "10.0.11")
                 .HasAnnotation("Relational:MaxIdentifierLength", 128);
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
@@ -126,7 +126,6 @@ namespace Library.Modules.Core.Catalog.Data.Migrations
 
                     b.HasIndex("Isbn")
                         .IsUnique()
-                        .HasDatabaseName("IX_Books_Isbn")
                         .HasFilter("[Isbn] IS NOT NULL");
 
                     b.ToTable("Books", "catalog", t =>
@@ -151,8 +150,7 @@ namespace Library.Modules.Core.Catalog.Data.Migrations
 
                     b.HasKey("BookId", "AuthorId");
 
-                    b.HasIndex("AuthorId")
-                        .HasDatabaseName("IX_BookAuthors_AuthorId");
+                    b.HasIndex("AuthorId");
 
                     b.ToTable("BookAuthors", "catalog");
                 });
@@ -167,8 +165,7 @@ namespace Library.Modules.Core.Catalog.Data.Migrations
 
                     b.HasKey("BookId", "CategoryId");
 
-                    b.HasIndex("CategoryId")
-                        .HasDatabaseName("IX_BookCategories_CategoryId");
+                    b.HasIndex("CategoryId");
 
                     b.ToTable("BookCategories", "catalog");
                 });
@@ -235,17 +232,11 @@ namespace Library.Modules.Core.Catalog.Data.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("Barcode")
-                        .IsUnique()
-                        .HasDatabaseName("UQ_BookCopies_Barcode");
+                        .IsUnique();
 
-                    b.HasIndex("BookId")
-                        .HasDatabaseName("IX_BookCopies_BookId");
+                    b.HasIndex("BookId");
 
-                    b.HasIndex("LocationId")
-                        .HasDatabaseName("IX_BookCopies_LocationId");
-
-                    b.HasIndex("Status")
-                        .HasDatabaseName("IX_BookCopies_Status");
+                    b.HasIndex("LocationId");
 
                     b.ToTable("BookCopies", "catalog", t =>
                         {
@@ -384,7 +375,7 @@ namespace Library.Modules.Core.Catalog.Data.Migrations
                         .IsRequired();
 
                     b.HasOne("Library.Modules.Core.Catalog.Data.Location", "Location")
-                        .WithMany("Copies")
+                        .WithMany("BookCopies")
                         .HasForeignKey("LocationId")
                         .OnDelete(DeleteBehavior.Restrict);
 
@@ -414,7 +405,7 @@ namespace Library.Modules.Core.Catalog.Data.Migrations
 
             modelBuilder.Entity("Library.Modules.Core.Catalog.Data.Location", b =>
                 {
-                    b.Navigation("Copies");
+                    b.Navigation("BookCopies");
                 });
 #pragma warning restore 612, 618
         }

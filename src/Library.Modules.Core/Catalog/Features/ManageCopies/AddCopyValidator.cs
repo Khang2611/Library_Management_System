@@ -13,13 +13,26 @@ public sealed class AddCopyValidator : AbstractValidator<AddCopyRequest>
             .NotEmpty().WithMessage("Mã vạch không được để trống.")
             .MaximumLength(50).WithMessage("Mã vạch tối đa 50 ký tự.");
 
-        RuleFor(x => x.Location)
-            .MaximumLength(100).WithMessage("Vị trí kệ tối đa 100 ký tự.")
-            .When(x => !string.IsNullOrEmpty(x.Location));
+        RuleFor(x => x.LocationId)
+            .GreaterThan(0).WithMessage("LocationId không hợp lệ.")
+            .When(x => x.LocationId.HasValue);
 
         RuleFor(x => x.AcquiredDate)
             .LessThanOrEqualTo(DateOnly.FromDateTime(DateTime.Today))
             .WithMessage("Ngày nhập sách không được sau ngày hiện tại.")
             .When(x => x.AcquiredDate.HasValue);
+    }
+}
+
+public sealed class UpdateCopyLocationValidator : AbstractValidator<UpdateCopyLocationRequest>
+{
+    public UpdateCopyLocationValidator()
+    {
+        RuleFor(x => x.CopyId)
+            .GreaterThan(0).WithMessage("CopyId không hợp lệ.");
+
+        RuleFor(x => x.LocationId)
+            .GreaterThan(0).WithMessage("LocationId không hợp lệ.")
+            .When(x => x.LocationId.HasValue);
     }
 }

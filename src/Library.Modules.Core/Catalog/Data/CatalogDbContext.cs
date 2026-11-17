@@ -11,8 +11,8 @@ public class CatalogDbContext(DbContextOptions<CatalogDbContext> options) : DbCo
     public DbSet<Category> Categories => Set<Category>();
     public DbSet<BookAuthor> BookAuthors => Set<BookAuthor>();
     public DbSet<BookCategory> BookCategories => Set<BookCategory>();
-    public DbSet<Location> Locations => Set<Location>();
     public DbSet<BookCopy> BookCopies => Set<BookCopy>();
+    public DbSet<Location> Locations => Set<Location>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
