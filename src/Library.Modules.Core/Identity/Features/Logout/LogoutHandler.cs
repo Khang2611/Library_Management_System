@@ -1,4 +1,4 @@
-﻿using Library.Modules.Core.Identity.Data;
+using Library.Modules.Core.Identity.Data;
 using Library.Modules.Core.Shared;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
@@ -29,4 +29,3 @@ public sealed class LogoutHandler : IRequestHandler<LogoutRequest, ApiResponse<b
         return ApiResponse<bool>.Ok(true);
     }
 }
-

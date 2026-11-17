@@ -1,6 +1,5 @@
-﻿using Library.Modules.Core.Identity.Contracts;
+using Library.Modules.Core.Identity.Contracts;
 using Library.Modules.Core.Identity.Data;
-using Library.Modules.Core.Shared;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 
@@ -10,19 +9,16 @@ public sealed class GetAccountSummaryHandler : IRequestHandler<GetAccountSummary
 {
     private readonly IdentityDbContext _db;
 
-    public GetAccountSummaryHandler(IdentityDbContext db)
-    {
-        _db = db;
-    }
+    public GetAccountSummaryHandler(IdentityDbContext db) => _db = db;
 
     public async Task<AccountSummary?> Handle(GetAccountSummaryQuery request, CancellationToken ct)
     {
-        return await _db.Accounts
-            .AsNoTracking()
+        var account = await _db.Accounts
             .Where(a => a.Id == request.AccountId)
-            .Select(a => new AccountSummary(a.Id, a.FullName, a.Status == AccountStatus.Active, a.Username))
+            .Select(a => new AccountSummary(a.Id, a.FullName, a.Status == AccountStatus.Active, a.Username, a.Status.ToString()))
             .FirstOrDefaultAsync(ct);
+
+        return account;
     }
 }
-
 

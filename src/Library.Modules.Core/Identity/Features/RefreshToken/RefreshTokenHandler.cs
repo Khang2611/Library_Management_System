@@ -1,4 +1,6 @@
-﻿using FluentValidation;
+using System.Security.Cryptography;
+using System.Text;
+using FluentValidation;
 using Library.Modules.Core.Identity.Data;
 using Library.Modules.Core.Identity.Features.Login;
 using Library.Modules.Core.Identity.Services;
@@ -21,43 +23,64 @@ public sealed class RefreshTokenHandler : IRequestHandler<RefreshTokenRequest, A
         _jwt = jwt;
     }
 
+    private static string HashToken(string token)
+    {
+        var bytes = SHA256.HashData(Encoding.UTF8.GetBytes(token));
+        return Convert.ToHexString(bytes);
+    }
+
     public async Task<ApiResponse<LoginResponse>> Handle(RefreshTokenRequest request, CancellationToken ct)
     {
         var val = await _validator.ValidateAsync(request, ct);
         if (!val.IsValid) return ApiResponse<LoginResponse>.Fail(string.Join("; ", val.Errors.Select(e => e.ErrorMessage)));
 
-        var sessions = await _db.LoginSessions
-            .Include(s => s.Account)
-            .Where(s => s.LoggedOutAt == null && s.ExpiresAt > DateTime.UtcNow)
-            .ToListAsync(ct);
+        var tokenHash = HashToken(request.RefreshToken);
 
-        LoginSession? validSession = null;
-        foreach (var s in sessions)
+        // Tra cứu trực tiếp O(1) qua SHA256 hash thay vì quét toàn bộ bảng và verify BCrypt (chống DoS)
+        var validSession = await _db.LoginSessions
+            .Include(s => s.Account)
+            .FirstOrDefaultAsync(s => s.RefreshTokenHash == tokenHash && s.LoggedOutAt == null && s.ExpiresAt > DateTime.UtcNow, ct);
+
+        // Hỗ trợ phiên bản cũ lưu bằng BCrypt (nếu có)
+        if (validSession == null)
         {
-            if (s.RefreshTokenHash != null && BCrypt.Net.BCrypt.Verify(request.RefreshToken, s.RefreshTokenHash))
+            var legacySessions = await _db.LoginSessions
+                .Include(s => s.Account)
+                .Where(s => s.LoggedOutAt == null && s.ExpiresAt > DateTime.UtcNow && s.RefreshTokenHash != null && s.RefreshTokenHash.StartsWith("$2"))
+                .OrderByDescending(s => s.LoggedInAt)
+                .Take(20)
+                .ToListAsync(ct);
+
+            foreach (var s in legacySessions)
             {
-                validSession = s;
-                break;
+                if (BCrypt.Net.BCrypt.Verify(request.RefreshToken, s.RefreshTokenHash))
+                {
+                    validSession = s;
+                    break;
+                }
             }
         }
 
         if (validSession == null)
-            return ApiResponse<LoginResponse>.Fail("Refresh token khï¿½ng h?p l? ho?c ï¿½? h?t h?n.");
+            return ApiResponse<LoginResponse>.Fail("Refresh token không hợp lệ hoặc đã hết hạn.");
 
-        if (validSession.Account.Status != AccountStatus.Active)
-            return ApiResponse<LoginResponse>.Fail("Tï¿½i kho?n khï¿½ng ho?t ï¿½?ng.");
+        if (validSession.Account.Status == AccountStatus.Locked)
+            return ApiResponse<LoginResponse>.Fail("Tài khoản đã bị khóa. Vui lòng liên hệ quản trị viên.");
 
-        // Revoke old session
+        if (validSession.Account.Status == AccountStatus.Inactive)
+            return ApiResponse<LoginResponse>.Fail("Tài khoản không hoạt động.");
+
+        // Thu hồi session cũ
         validSession.LoggedOutAt = DateTime.UtcNow;
 
-        // Generate new tokens
+        // Tạo token mới
         var accessToken = _jwt.GenerateAccessToken(validSession.Account);
         var newRefreshToken = _jwt.GenerateRefreshToken();
 
         var newSession = new LoginSession
         {
             AccountId = validSession.AccountId,
-            RefreshTokenHash = BCrypt.Net.BCrypt.HashPassword(newRefreshToken),
+            RefreshTokenHash = HashToken(newRefreshToken),
             LoggedInAt = DateTime.UtcNow,
             ExpiresAt = _jwt.GetRefreshTokenExpiry()
         };
@@ -73,10 +96,9 @@ public sealed class RefreshTokenHandler : IRequestHandler<RefreshTokenRequest, A
             Role: validSession.Account.Role.ToString(),
             AccessToken: accessToken,
             RefreshToken: newRefreshToken,
-            AccessTokenExpiresAt: DateTime.UtcNow.AddMinutes(60)
+            AccessTokenExpiresAt: _jwt.GetAccessTokenExpiry()
         );
 
         return ApiResponse<LoginResponse>.Ok(response);
     }
 }
-

@@ -7,18 +7,13 @@ public class LoginSessionConfiguration : IEntityTypeConfiguration<LoginSession>
 {
     public void Configure(EntityTypeBuilder<LoginSession> builder)
     {
-        builder.ToTable("LoginSessions", t =>
-        {
-            t.HasCheckConstraint("CK_LoginSessions_ExpiresAt", "[ExpiresAt] > [LoggedInAt]");
-        });
-
+        builder.ToTable("LoginSessions");
         builder.HasKey(ls => ls.Id);
 
         builder.Property(ls => ls.RefreshTokenHash)
             .HasMaxLength(255);
 
         builder.Property(ls => ls.IpAddress)
-            .IsUnicode(false)
             .HasMaxLength(45); // IPv6 max
 
         builder.Property(ls => ls.UserAgent)
@@ -27,12 +22,12 @@ public class LoginSessionConfiguration : IEntityTypeConfiguration<LoginSession>
         builder.Property(ls => ls.LoggedInAt)
             .HasDefaultValueSql("SYSDATETIME()");
 
-        builder.HasIndex(ls => ls.AccountId)
-            .HasDatabaseName("IX_LoginSessions_AccountId");
+        // CK_PhienDangNhap_ThoiGian: ExpiresAt > LoggedInAt
+        builder.ToTable(t => t.HasCheckConstraint(
+            "CK_LoginSessions_ExpiresAt",
+            "[ExpiresAt] > [LoggedInAt]"));
 
-        builder.HasIndex(ls => ls.ExpiresAt)
-            .HasDatabaseName("IX_LoginSessions_ExpiresAt");
-
+        // FK → Accounts (NO ACTION — giữ lại session để audit)
         builder.HasOne(ls => ls.Account)
             .WithMany(a => a.LoginSessions)
             .HasForeignKey(ls => ls.AccountId)

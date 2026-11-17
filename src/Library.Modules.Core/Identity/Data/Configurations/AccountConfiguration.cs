@@ -7,13 +7,7 @@ public class AccountConfiguration : IEntityTypeConfiguration<Account>
 {
     public void Configure(EntityTypeBuilder<Account> builder)
     {
-        builder.ToTable("Accounts", t =>
-        {
-            t.HasCheckConstraint("CK_Accounts_Role", "[Role] IN (N'Reader', N'Librarian', N'Admin')");
-            t.HasCheckConstraint("CK_Accounts_Status", "[Status] IN (N'Active', N'Locked', N'Inactive')");
-            t.HasCheckConstraint("CK_Accounts_DeactivatedAt", "[DeactivatedAt] IS NULL OR [DeactivatedAt] > [CreatedAt]");
-        });
-
+        builder.ToTable("Accounts");
         builder.HasKey(a => a.Id);
 
         builder.Property(a => a.Username)
@@ -29,13 +23,13 @@ public class AccountConfiguration : IEntityTypeConfiguration<Account>
             .IsRequired();
 
         builder.Property(a => a.Email)
-            .IsUnicode(false)
             .HasMaxLength(150)
+            .IsUnicode(false)
             .IsRequired();
 
         builder.Property(a => a.PhoneNumber)
-            .IsUnicode(false)
-            .HasMaxLength(20);
+            .HasMaxLength(20)
+            .IsUnicode(false);
 
         builder.Property(a => a.Address)
             .HasMaxLength(255);
@@ -60,12 +54,17 @@ public class AccountConfiguration : IEntityTypeConfiguration<Account>
         // Unique constraints
         builder.HasIndex(a => a.Username).IsUnique();
         builder.HasIndex(a => a.Email).IsUnique();
-        builder.HasIndex(a => a.PhoneNumber)
-            .IsUnique()
-            .HasDatabaseName("IX_Accounts_PhoneNumber")
-            .HasFilter("[PhoneNumber] IS NOT NULL");
+        builder.HasIndex(a => a.PhoneNumber).IsUnique().HasFilter("[PhoneNumber] IS NOT NULL");
 
-        // Navigation within Identity context
+        // Check constraints
+        builder.ToTable("Accounts", t =>
+        {
+            t.HasCheckConstraint("CK_Accounts_Role", "[Role] IN (N'Reader', N'Librarian', N'Admin')");
+            t.HasCheckConstraint("CK_Accounts_Status", "[Status] IN (N'Active', N'Locked', N'Inactive', N'Suspended')");
+            t.HasCheckConstraint("CK_Accounts_DeactivatedAt", "[DeactivatedAt] IS NULL OR [DeactivatedAt] > [CreatedAt]");
+        });
+
+        // Navigation within Identity context (NO ACTION — giữ sessions để audit)
         builder.HasMany(a => a.LoginSessions)
             .WithOne(ls => ls.Account)
             .HasForeignKey(ls => ls.AccountId)

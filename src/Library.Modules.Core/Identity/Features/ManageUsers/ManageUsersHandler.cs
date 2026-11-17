@@ -1,4 +1,4 @@
-﻿using FluentValidation;
+using FluentValidation;
 using Library.Modules.Core.Identity.Data;
 using Library.Modules.Core.Shared;
 using MediatR;
@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Library.Modules.Core.Identity.Features.ManageUsers;
 
-public sealed class ManageUsersHandler :
+public sealed class ManageUsersHandler : 
     IRequestHandler<GetUsersRequest, ApiResponse<GetUsersResult>>,
     IRequestHandler<ChangeRoleRequest, ApiResponse<bool>>,
     IRequestHandler<ChangeStatusRequest, ApiResponse<bool>>
@@ -29,8 +29,8 @@ public sealed class ManageUsersHandler :
         if (!string.IsNullOrWhiteSpace(request.Keyword))
         {
             var kw = request.Keyword.ToLower().Trim();
-            query = query.Where(a => a.Username.ToLower().Contains(kw) ||
-                                     a.FullName.ToLower().Contains(kw) ||
+            query = query.Where(a => a.Username.ToLower().Contains(kw) || 
+                                     a.FullName.ToLower().Contains(kw) || 
                                      a.Email.ToLower().Contains(kw));
         }
 
@@ -44,8 +44,21 @@ public sealed class ManageUsersHandler :
             .OrderByDescending(a => a.CreatedAt)
             .Skip((request.Page - 1) * request.PageSize)
             .Take(request.PageSize)
-            .Select(a => new UserSummary(a.Id, a.Username, a.FullName, a.Email, a.Role.ToString(), a.Status.ToString()))
+            .Select(a => new UserSummary(
+                a.Id,
+                a.Username,
+                a.FullName,
+                a.Email,
+                a.Role.ToString(),
+                a.Status.ToString(),
+                a.PhoneNumber,
+                a.CreatedAt))
             .ToListAsync(ct);
+
+        items = items.Select(u => u with
+        {
+            CreatedAt = VietnamTime.SpecifyUtc(u.CreatedAt)
+        }).ToList();
 
         return ApiResponse<GetUsersResult>.Ok(new GetUsersResult(items, total));
     }
@@ -56,7 +69,7 @@ public sealed class ManageUsersHandler :
         if (!val.IsValid) return ApiResponse<bool>.Fail(string.Join("; ", val.Errors.Select(e => e.ErrorMessage)));
 
         var account = await _db.Accounts.FindAsync(new object[] { request.AccountId }, ct);
-        if (account == null) return ApiResponse<bool>.Fail("TĂ i khoáº£n khĂ´ng tá»“n táº¡i.");
+        if (account == null) return ApiResponse<bool>.Fail("Tài khoản không tồn tại.");
 
         account.Role = request.NewRole;
         await _db.SaveChangesAsync(ct);
@@ -69,7 +82,7 @@ public sealed class ManageUsersHandler :
         if (!val.IsValid) return ApiResponse<bool>.Fail(string.Join("; ", val.Errors.Select(e => e.ErrorMessage)));
 
         var account = await _db.Accounts.FindAsync(new object[] { request.AccountId }, ct);
-        if (account == null) return ApiResponse<bool>.Fail("TĂ i khoáº£n khĂ´ng tá»“n táº¡i.");
+        if (account == null) return ApiResponse<bool>.Fail("Tài khoản không tồn tại.");
 
         account.Status = request.NewStatus;
         if (request.NewStatus == AccountStatus.Inactive || request.NewStatus == AccountStatus.Locked)
@@ -85,4 +98,3 @@ public sealed class ManageUsersHandler :
         return ApiResponse<bool>.Ok(true);
     }
 }
-

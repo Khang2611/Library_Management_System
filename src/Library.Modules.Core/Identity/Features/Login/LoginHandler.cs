@@ -1,4 +1,6 @@
-﻿using FluentValidation;
+using System.Security.Cryptography;
+using System.Text;
+using FluentValidation;
 using Library.Modules.Core.Identity.Data;
 using Library.Modules.Core.Identity.Services;
 using Library.Modules.Core.Shared;
@@ -22,41 +24,42 @@ public sealed class LoginHandler : IRequestHandler<LoginRequest, ApiResponse<Log
 
     public async Task<ApiResponse<LoginResponse>> Handle(LoginRequest request, CancellationToken ct)
     {
-        // â”€â”€ Validate â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+        // ── Validate ──────────────────────────────────────────────────────────
         var validation = await _validator.ValidateAsync(request, ct);
         if (!validation.IsValid)
             return ApiResponse<LoginResponse>.Fail(
                 string.Join("; ", validation.Errors.Select(e => e.ErrorMessage)));
 
-        // â”€â”€ Find account â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+        // ── Find account ──────────────────────────────────────────────────────
         var normalizedUsername = request.Username.Trim().ToLowerInvariant();
         var account = await _db.Accounts
             .FirstOrDefaultAsync(a => a.Username == normalizedUsername, ct);
 
         if (account is null)
-            return ApiResponse<LoginResponse>.Fail("TĂªn Ä‘Äƒng nháº­p hoáº·c máº­t kháº©u khĂ´ng Ä‘Ăºng.");
+            return ApiResponse<LoginResponse>.Fail("Tên đăng nhập hoặc mật khẩu không đúng.");
 
-        // â”€â”€ Check status â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+        // ── Check status ──────────────────────────────────────────────────────
         if (account.Status == AccountStatus.Locked)
-            return ApiResponse<LoginResponse>.Fail("TĂ i khoáº£n Ä‘Ă£ bá»‹ khĂ³a. Vui lĂ²ng liĂªn há»‡ quáº£n trá»‹ viĂªn.");
+            return ApiResponse<LoginResponse>.Fail("Tài khoản đã bị khóa. Vui lòng liên hệ quản trị viên.");
 
         if (account.Status == AccountStatus.Inactive)
-            return ApiResponse<LoginResponse>.Fail("TĂ i khoáº£n Ä‘Ă£ bá»‹ vĂ´ hiá»‡u hĂ³a.");
+            return ApiResponse<LoginResponse>.Fail("Tài khoản đã bị vô hiệu hóa.");
 
-        // â”€â”€ Verify password â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+        // ── Verify password ───────────────────────────────────────────────────
         if (!BCrypt.Net.BCrypt.Verify(request.Password, account.PasswordHash))
-            return ApiResponse<LoginResponse>.Fail("TĂªn Ä‘Äƒng nháº­p hoáº·c máº­t kháº©u khĂ´ng Ä‘Ăºng.");
+            return ApiResponse<LoginResponse>.Fail("Tên đăng nhập hoặc mật khẩu không đúng.");
 
-        // â”€â”€ Generate tokens â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+        // ── Generate tokens ───────────────────────────────────────────────────
         var accessToken = _jwt.GenerateAccessToken(account);
         var refreshToken = _jwt.GenerateRefreshToken();
         var refreshExpiry = _jwt.GetRefreshTokenExpiry();
 
-        // â”€â”€ Persist login session â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+        // ── Persist login session (SHA256 for fast lookup & anti-DoS) ─────────
+        var refreshTokenHash = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(refreshToken)));
         var session = new LoginSession
         {
             AccountId = account.Id,
-            RefreshTokenHash = BCrypt.Net.BCrypt.HashPassword(refreshToken),
+            RefreshTokenHash = refreshTokenHash,
             LoggedInAt = DateTime.UtcNow,
             ExpiresAt = refreshExpiry
         };
@@ -68,8 +71,7 @@ public sealed class LoginHandler : IRequestHandler<LoginRequest, ApiResponse<Log
 
         await _db.SaveChangesAsync(ct);
 
-        // â”€â”€ Build response â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-        var accessExpiryMinutes = 60; // matches JwtSettings:AccessTokenExpiryMinutes default
+        // ── Build response ────────────────────────────────────────────────────
         var response = new LoginResponse(
             AccountId: account.Id,
             Username: account.Username,
@@ -78,10 +80,9 @@ public sealed class LoginHandler : IRequestHandler<LoginRequest, ApiResponse<Log
             Role: account.Role.ToString(),
             AccessToken: accessToken,
             RefreshToken: refreshToken,
-            AccessTokenExpiresAt: DateTime.UtcNow.AddMinutes(accessExpiryMinutes)
+            AccessTokenExpiresAt: _jwt.GetAccessTokenExpiry()
         );
 
         return ApiResponse<LoginResponse>.Ok(response);
     }
 }
-
