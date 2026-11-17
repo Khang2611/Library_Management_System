@@ -1,6 +1,6 @@
 using FluentValidation;
 using Library.Modules.Core.Catalog.Contracts;
-using Library.Modules.Core.Circulation.Contracts;
+using Library.Modules.Core.Catalog.Data;
 using Library.Modules.Core.Circulation.Data;
 using Library.Modules.Core.Shared;
 using Library.Modules.Core.Shared.Events;
@@ -11,13 +11,15 @@ namespace Library.Modules.Core.Circulation.Features.ReportIncident;
 
 public sealed class ReportIncidentHandler : IRequestHandler<ReportIncidentRequest, ApiResponse<long>>
 {
-    private readonly AppDbContext _db;
+    private readonly CirculationDbContext _db;
+    private readonly ISender _sender;
     private readonly IValidator<ReportIncidentRequest> _validator;
     private readonly IMediator _mediator;
 
-    public ReportIncidentHandler(AppDbContext db, IValidator<ReportIncidentRequest> validator, IMediator mediator)
+    public ReportIncidentHandler(CirculationDbContext db, ISender sender, IValidator<ReportIncidentRequest> validator, IMediator mediator)
     {
         _db = db;
+        _sender = sender;
         _validator = validator;
         _mediator = mediator;
     }
@@ -27,8 +29,7 @@ public sealed class ReportIncidentHandler : IRequestHandler<ReportIncidentReques
         var val = await _validator.ValidateAsync(request, ct);
         if (!val.IsValid) return ApiResponse<long>.Fail(string.Join("; ", val.Errors.Select(e => e.ErrorMessage)));
 
-        var detail = await _db.LoanSlipDetails
-            .Include(d => d.LoanSlip)
+        var detail = await _db.LoanSlipDetails.Include(d => d.LoanSlip)
             .FirstOrDefaultAsync(d => d.Id == request.LoanSlipDetailId, ct);
         if (detail == null) return ApiResponse<long>.Fail("Chi tiết phiếu mượn không tồn tại.");
 
@@ -46,50 +47,30 @@ public sealed class ReportIncidentHandler : IRequestHandler<ReportIncidentReques
 
         _db.Incidents.Add(incident);
 
+        var newStatus = request.IncidentType == IncidentType.Lost ? CopyStatus.Lost : CopyStatus.Maintenance;
+        var newCondition = request.IncidentType == IncidentType.Lost
+            ? CopyCondition.Lost
+            : (request.Severity == IncidentSeverity.Minor ? CopyCondition.MinorDamage : CopyCondition.MajorDamage);
+
+        await _sender.Send(new SetCopyStatusCommand(detail.BookCopyId, null, newStatus, newCondition), ct);
+
         if (request.IncidentType == IncidentType.Lost)
         {
             detail.Status = LoanDetailStatus.Lost;
-            await _mediator.Send(new SetCopyStatusCommand(
-                detail.BookCopyId,
-                null,
-                CopyStatus.Lost,
-                CopyCondition.Lost), ct);
-        }
-        else if (request.IncidentType == IncidentType.Damaged)
-        {
-            detail.Status = LoanDetailStatus.Damaged;
-            var isSevere = request.Severity == IncidentSeverity.Major || request.Severity == IncidentSeverity.TotalLoss;
-            var condition = isSevere ? CopyCondition.MajorDamage : CopyCondition.MinorDamage;
-            var newStatus = isSevere ? CopyStatus.Maintenance : (CopyStatus?)null;
 
-            await _mediator.Send(new SetCopyStatusCommand(
-                detail.BookCopyId,
-                null,
-                newStatus,
-                condition), ct);
-        }
-
-        // Check if all details for this loan slip are no longer borrowing
-        var allDetails = await _db.LoanSlipDetails
-            .Where(d => d.LoanSlipId == detail.LoanSlipId)
-            .ToListAsync(ct);
-
-        if (allDetails.All(d => (d.Id == detail.Id ? detail.Status : d.Status) != LoanDetailStatus.Borrowing))
-        {
-            detail.LoanSlip.Status = LoanStatus.Returned;
-            detail.LoanSlip.UpdatedAt = DateTime.UtcNow;
+            var slip = await _db.LoanSlips.Include(l => l.Details)
+                .FirstOrDefaultAsync(l => l.Id == detail.LoanSlipId, ct);
+            if (slip != null && slip.Details.All(d => d.Status != LoanDetailStatus.Borrowing))
+            {
+                slip.Status = LoanStatus.Returned;
+                slip.UpdatedAt = DateTime.UtcNow;
+            }
         }
 
         await _db.SaveChangesAsync(ct);
 
         await _mediator.Publish(new IncidentReportedEvent(
-            incident.Id,
-            incident.LoanSlipDetailId,
-            detail.LoanSlip.AccountId,
-            incident.LibrarianId,
-            incident.IncidentType,
-            incident.Severity,
-            incident.CompensationAmount), ct);
+            incident.Id, incident.LoanSlipDetailId, detail.LoanSlip.AccountId, incident.LibrarianId, incident.IncidentType, incident.Severity, incident.CompensationAmount), ct);
 
         return ApiResponse<long>.Ok(incident.Id);
     }

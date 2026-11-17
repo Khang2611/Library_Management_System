@@ -13,10 +13,9 @@ public static class ApproveRenewalEndpoint
     {
         app.MapPatch("/api/circulation/renewals/{renewalId:long}/status", async (long renewalId, ApproveRenewalRequest req, ClaimsPrincipal user, IMediator mediator, CancellationToken ct) =>
         {
-            var staffId = user.GetAccountId();
-            var finalReq = req with { LibrarianId = staffId };
-            finalReq.RenewalId = renewalId;
-            return Results.Ok(await mediator.Send(finalReq, ct));
+            req.RenewalId = renewalId;
+            req = req with { LibrarianId = user.GetAccountId() };
+            return Results.Ok(await mediator.Send(req, ct));
         })
         .WithTags("Circulation")
         .WithSummary("Approve or reject a renewal request (Staff only)")

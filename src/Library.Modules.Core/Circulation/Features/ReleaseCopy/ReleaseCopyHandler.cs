@@ -1,7 +1,6 @@
 using Library.Modules.Core.Catalog.Contracts;
 using Library.Modules.Core.Circulation.Contracts;
 using Library.Modules.Core.Circulation.Data;
-using Library.Modules.Core.Shared;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 
@@ -9,12 +8,9 @@ namespace Library.Modules.Core.Circulation.Features.ReleaseCopy;
 
 public sealed class ReleaseCopyHandler : IRequestHandler<ReleaseCopyCommand, CopyStatus>
 {
-    private readonly AppDbContext _db;
+    private readonly CirculationDbContext _db;
 
-    public ReleaseCopyHandler(AppDbContext db)
-    {
-        _db = db;
-    }
+    public ReleaseCopyHandler(CirculationDbContext db) => _db = db;
 
     public async Task<CopyStatus> Handle(ReleaseCopyCommand request, CancellationToken ct)
     {
@@ -26,15 +22,13 @@ public sealed class ReleaseCopyHandler : IRequestHandler<ReleaseCopyCommand, Cop
             query = query.Where(r => r.Id != request.ExcludeReservationId.Value);
         }
 
-        var waitingRes = await query
-            .OrderBy(r => r.ReservedAt)
-            .FirstOrDefaultAsync(ct);
-
-        if (waitingRes != null)
+        var nextReservation = await query.OrderBy(r => r.ReservedAt).FirstOrDefaultAsync(ct);
+        if (nextReservation is not null)
         {
-            waitingRes.BookCopyId = request.CopyId;
-            waitingRes.Status = ReservationStatus.Ready;
-            waitingRes.ExpiresAt = DateTime.UtcNow.AddDays(3);
+            nextReservation.BookCopyId = request.CopyId;
+            nextReservation.Status = ReservationStatus.Ready;
+            nextReservation.ExpiresAt = DateTime.UtcNow.AddDays(3);
+            await _db.SaveChangesAsync(ct);
             return CopyStatus.Reserved;
         }
 

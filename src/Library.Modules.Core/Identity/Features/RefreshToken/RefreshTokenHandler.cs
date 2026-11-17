@@ -1,4 +1,4 @@
-using FluentValidation;
+﻿using FluentValidation;
 using Library.Modules.Core.Identity.Data;
 using Library.Modules.Core.Identity.Features.Login;
 using Library.Modules.Core.Identity.Services;
@@ -10,11 +10,11 @@ namespace Library.Modules.Core.Identity.Features.RefreshToken;
 
 public sealed class RefreshTokenHandler : IRequestHandler<RefreshTokenRequest, ApiResponse<LoginResponse>>
 {
-    private readonly AppDbContext _db;
+    private readonly IdentityDbContext _db;
     private readonly IValidator<RefreshTokenRequest> _validator;
     private readonly JwtTokenService _jwt;
 
-    public RefreshTokenHandler(AppDbContext db, IValidator<RefreshTokenRequest> validator, JwtTokenService jwt)
+    public RefreshTokenHandler(IdentityDbContext db, IValidator<RefreshTokenRequest> validator, JwtTokenService jwt)
     {
         _db = db;
         _validator = validator;
@@ -42,10 +42,10 @@ public sealed class RefreshTokenHandler : IRequestHandler<RefreshTokenRequest, A
         }
 
         if (validSession == null)
-            return ApiResponse<LoginResponse>.Fail("Refresh token kh�ng h?p l? ho?c �? h?t h?n.");
+            return ApiResponse<LoginResponse>.Fail("Refresh token khï¿½ng h?p l? ho?c ï¿½? h?t h?n.");
 
         if (validSession.Account.Status != AccountStatus.Active)
-            return ApiResponse<LoginResponse>.Fail("T�i kho?n kh�ng ho?t �?ng.");
+            return ApiResponse<LoginResponse>.Fail("Tï¿½i kho?n khï¿½ng ho?t ï¿½?ng.");
 
         // Revoke old session
         validSession.LoggedOutAt = DateTime.UtcNow;
@@ -79,3 +79,4 @@ public sealed class RefreshTokenHandler : IRequestHandler<RefreshTokenRequest, A
         return ApiResponse<LoginResponse>.Ok(response);
     }
 }
+

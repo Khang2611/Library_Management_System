@@ -1,4 +1,6 @@
+using Library.Modules.Core.Catalog.Contracts;
 using Library.Modules.Core.Shared;
+using Library.Modules.Core.Shared.Persistence;
 using MediatR;
 
 namespace Library.Modules.Core.Circulation.Features.ReturnBook;
@@ -7,6 +9,6 @@ public record ReturnBookRequest(
     long LoanSlipId,
     int LibrarianId,
     List<ReturnedCopy> ReturnedCopies
-) : IRequest<ApiResponse<bool>>;
+) : IRequest<ApiResponse<bool>>, ITransactionalCommand;
 
-public record ReturnedCopy(long LoanSlipDetailId, string? Notes = null);
+public record ReturnedCopy(long LoanSlipDetailId, string? Notes = null, CopyCondition? Condition = null);

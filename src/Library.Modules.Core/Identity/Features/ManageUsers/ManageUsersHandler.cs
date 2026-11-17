@@ -1,4 +1,4 @@
-using FluentValidation;
+﻿using FluentValidation;
 using Library.Modules.Core.Identity.Data;
 using Library.Modules.Core.Shared;
 using MediatR;
@@ -11,11 +11,11 @@ public sealed class ManageUsersHandler :
     IRequestHandler<ChangeRoleRequest, ApiResponse<bool>>,
     IRequestHandler<ChangeStatusRequest, ApiResponse<bool>>
 {
-    private readonly AppDbContext _db;
+    private readonly IdentityDbContext _db;
     private readonly IValidator<ChangeRoleRequest> _roleValidator;
     private readonly IValidator<ChangeStatusRequest> _statusValidator;
 
-    public ManageUsersHandler(AppDbContext db, IValidator<ChangeRoleRequest> roleValidator, IValidator<ChangeStatusRequest> statusValidator)
+    public ManageUsersHandler(IdentityDbContext db, IValidator<ChangeRoleRequest> roleValidator, IValidator<ChangeStatusRequest> statusValidator)
     {
         _db = db;
         _roleValidator = roleValidator;
@@ -56,7 +56,7 @@ public sealed class ManageUsersHandler :
         if (!val.IsValid) return ApiResponse<bool>.Fail(string.Join("; ", val.Errors.Select(e => e.ErrorMessage)));
 
         var account = await _db.Accounts.FindAsync(new object[] { request.AccountId }, ct);
-        if (account == null) return ApiResponse<bool>.Fail("Tài khoản không tồn tại.");
+        if (account == null) return ApiResponse<bool>.Fail("TĂ i khoáº£n khĂ´ng tá»“n táº¡i.");
 
         account.Role = request.NewRole;
         await _db.SaveChangesAsync(ct);
@@ -69,7 +69,7 @@ public sealed class ManageUsersHandler :
         if (!val.IsValid) return ApiResponse<bool>.Fail(string.Join("; ", val.Errors.Select(e => e.ErrorMessage)));
 
         var account = await _db.Accounts.FindAsync(new object[] { request.AccountId }, ct);
-        if (account == null) return ApiResponse<bool>.Fail("Tài khoản không tồn tại.");
+        if (account == null) return ApiResponse<bool>.Fail("TĂ i khoáº£n khĂ´ng tá»“n táº¡i.");
 
         account.Status = request.NewStatus;
         if (request.NewStatus == AccountStatus.Inactive || request.NewStatus == AccountStatus.Locked)
@@ -85,3 +85,4 @@ public sealed class ManageUsersHandler :
         return ApiResponse<bool>.Ok(true);
     }
 }
+

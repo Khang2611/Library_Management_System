@@ -1,4 +1,4 @@
-using FluentValidation;
+﻿using FluentValidation;
 using Library.Modules.Core.Identity.Data;
 using Library.Modules.Core.Shared;
 using MediatR;
@@ -8,10 +8,10 @@ namespace Library.Modules.Core.Identity.Features.Register;
 
 public sealed class RegisterHandler : IRequestHandler<RegisterRequest, ApiResponse<int>>
 {
-    private readonly AppDbContext _db;
+    private readonly IdentityDbContext _db;
     private readonly IValidator<RegisterRequest> _validator;
 
-    public RegisterHandler(AppDbContext db, IValidator<RegisterRequest> validator)
+    public RegisterHandler(IdentityDbContext db, IValidator<RegisterRequest> validator)
     {
         _db = db;
         _validator = validator;
@@ -19,30 +19,30 @@ public sealed class RegisterHandler : IRequestHandler<RegisterRequest, ApiRespon
 
     public async Task<ApiResponse<int>> Handle(RegisterRequest request, CancellationToken ct)
     {
-        // ── Validate input ────────────────────────────────────────────────────
+        // â”€â”€ Validate input â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         var validation = await _validator.ValidateAsync(request, ct);
         if (!validation.IsValid)
             return ApiResponse<int>.Fail(
                 string.Join("; ", validation.Errors.Select(e => e.ErrorMessage)));
 
-        // ── Check duplicates ──────────────────────────────────────────────────
+        // â”€â”€ Check duplicates â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         var normalizedUsername = request.Username.Trim().ToLowerInvariant();
         var normalizedEmail = request.Email.Trim().ToLowerInvariant();
 
         if (await _db.Accounts.AnyAsync(a => a.Username == normalizedUsername, ct))
-            return ApiResponse<int>.Fail("Tên đăng nhập đã tồn tại.");
+            return ApiResponse<int>.Fail("TĂªn Ä‘Äƒng nháº­p Ä‘Ă£ tá»“n táº¡i.");
 
         if (await _db.Accounts.AnyAsync(a => a.Email == normalizedEmail, ct))
-            return ApiResponse<int>.Fail("Email đã được sử dụng.");
+            return ApiResponse<int>.Fail("Email Ä‘Ă£ Ä‘Æ°á»£c sá»­ dá»¥ng.");
 
         if (!string.IsNullOrWhiteSpace(request.PhoneNumber))
         {
             var phone = request.PhoneNumber.Trim();
             if (await _db.Accounts.AnyAsync(a => a.PhoneNumber == phone, ct))
-                return ApiResponse<int>.Fail("Số điện thoại đã được sử dụng.");
+                return ApiResponse<int>.Fail("Sá»‘ Ä‘iá»‡n thoáº¡i Ä‘Ă£ Ä‘Æ°á»£c sá»­ dá»¥ng.");
         }
 
-        // ── Create account ────────────────────────────────────────────────────
+        // â”€â”€ Create account â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         var account = new Account
         {
             Username = normalizedUsername,
@@ -61,3 +61,4 @@ public sealed class RegisterHandler : IRequestHandler<RegisterRequest, ApiRespon
         return ApiResponse<int>.Ok(account.Id);
     }
 }
+

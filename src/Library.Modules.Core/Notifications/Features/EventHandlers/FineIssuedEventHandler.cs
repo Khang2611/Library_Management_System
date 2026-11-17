@@ -7,9 +7,9 @@ namespace Library.Modules.Core.Notifications.Features.EventHandlers;
 
 public class FineIssuedEventHandler : INotificationHandler<FineIssuedEvent>
 {
-    private readonly AppDbContext _db;
+    private readonly NotificationsDbContext _db;
 
-    public FineIssuedEventHandler(AppDbContext db)
+    public FineIssuedEventHandler(NotificationsDbContext db)
     {
         _db = db;
     }
@@ -19,15 +19,14 @@ public class FineIssuedEventHandler : INotificationHandler<FineIssuedEvent>
         var notif = new Notification
         {
             AccountId = notification.AccountId,
-            Title = "Thông báo tiền phạt",
-            Content = $"Bạn có một khoản phạt mới ({notification.FineType}) với số tiền {notification.Amount:N0} VND.",
+            Title = "Bạn có phiếu phạt mới",
+            Content = $"Bạn vừa có phiếu phạt {notification.Amount:N0} VNĐ với lý do: {notification.FineType}. Vui lòng thanh toán sớm.",
             NotificationType = NotificationType.Fine,
             CreatedAt = DateTime.UtcNow,
             IsRead = false
         };
 
-        _db.Notifications.Add(notif);
+        _db.Set<Notification>().Add(notif);
         await _db.SaveChangesAsync(ct);
     }
 }
-

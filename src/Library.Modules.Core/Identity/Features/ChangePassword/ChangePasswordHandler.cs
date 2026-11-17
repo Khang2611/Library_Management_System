@@ -1,3 +1,4 @@
+ï»¿using Library.Modules.Core.Identity.Data;
 using FluentValidation;
 using Library.Modules.Core.Shared;
 using MediatR;
@@ -7,10 +8,10 @@ namespace Library.Modules.Core.Identity.Features.ChangePassword;
 
 public sealed class ChangePasswordHandler : IRequestHandler<ChangePasswordRequest, ApiResponse<bool>>
 {
-    private readonly AppDbContext _db;
+    private readonly IdentityDbContext _db;
     private readonly IValidator<ChangePasswordRequest> _validator;
 
-    public ChangePasswordHandler(AppDbContext db, IValidator<ChangePasswordRequest> validator)
+    public ChangePasswordHandler(IdentityDbContext db, IValidator<ChangePasswordRequest> validator)
     {
         _db = db;
         _validator = validator;
@@ -22,13 +23,14 @@ public sealed class ChangePasswordHandler : IRequestHandler<ChangePasswordReques
         if (!val.IsValid) return ApiResponse<bool>.Fail(string.Join("; ", val.Errors.Select(e => e.ErrorMessage)));
 
         var account = await _db.Accounts.FindAsync(new object[] { request.AccountId }, ct);
-        if (account == null) return ApiResponse<bool>.Fail("Tài kho?n không t?n t?i.");
+        if (account == null) return ApiResponse<bool>.Fail("TÃ i kho?n khÃ´ng t?n t?i.");
 
         if (!BCrypt.Net.BCrypt.Verify(request.CurrentPassword, account.PasswordHash))
-            return ApiResponse<bool>.Fail("M?t kh?u hi?n t?i không ðúng.");
+            return ApiResponse<bool>.Fail("M?t kh?u hi?n t?i khÃ´ng Ä‘Ãºng.");
 
         account.PasswordHash = BCrypt.Net.BCrypt.HashPassword(request.NewPassword);
         await _db.SaveChangesAsync(ct);
         return ApiResponse<bool>.Ok(true);
     }
 }
+

@@ -1,4 +1,4 @@
-using Library.Modules.Core.Identity.Contracts;
+﻿using Library.Modules.Core.Identity.Contracts;
 using Library.Modules.Core.Identity.Data;
 using Library.Modules.Core.Shared;
 using MediatR;
@@ -9,10 +9,10 @@ namespace Library.Modules.Core.Identity.Features.SeedDefaultAdmin;
 
 public sealed class SeedDefaultAdminHandler : IRequestHandler<SeedDefaultAdminCommand, bool>
 {
-    private readonly AppDbContext _db;
+    private readonly IdentityDbContext _db;
     private readonly IConfiguration _config;
 
-    public SeedDefaultAdminHandler(AppDbContext db, IConfiguration config)
+    public SeedDefaultAdminHandler(IdentityDbContext db, IConfiguration config)
     {
         _db = db;
         _config = config;
@@ -27,7 +27,7 @@ public sealed class SeedDefaultAdminHandler : IRequestHandler<SeedDefaultAdminCo
         var username = (_config["AdminSeed:Username"] ?? "admin").Trim().ToLowerInvariant();
         var password = _config["AdminSeed:Password"] ?? "Admin@123";
         var email = (_config["AdminSeed:Email"] ?? "admin@library.edu.vn").Trim().ToLowerInvariant();
-        var fullName = (_config["AdminSeed:FullName"] ?? "Quản Trị Viên Hệ Thống").Trim();
+        var fullName = (_config["AdminSeed:FullName"] ?? "Quáº£n Trá»‹ ViĂªn Há»‡ Thá»‘ng").Trim();
 
         var admin = new Account
         {
@@ -46,4 +46,5 @@ public sealed class SeedDefaultAdminHandler : IRequestHandler<SeedDefaultAdminCo
         return true;
     }
 }
+
 

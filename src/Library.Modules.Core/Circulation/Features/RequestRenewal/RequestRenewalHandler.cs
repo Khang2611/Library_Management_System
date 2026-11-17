@@ -8,10 +8,11 @@ namespace Library.Modules.Core.Circulation.Features.RequestRenewal;
 
 public sealed class RequestRenewalHandler : IRequestHandler<RequestRenewalRequest, ApiResponse<long>>
 {
-    private readonly AppDbContext _db;
+    private readonly CirculationDbContext _db;
     private readonly IValidator<RequestRenewalRequest> _validator;
+    private const int MaxRenewals = 3; // số lần gia hạn tối đa
 
-    public RequestRenewalHandler(AppDbContext db, IValidator<RequestRenewalRequest> validator)
+    public RequestRenewalHandler(CirculationDbContext db, IValidator<RequestRenewalRequest> validator)
     {
         _db = db;
         _validator = validator;
@@ -37,26 +38,30 @@ public sealed class RequestRenewalHandler : IRequestHandler<RequestRenewalReques
         if (detail.Status != LoanDetailStatus.Borrowing)
             return ApiResponse<long>.Fail("Sách này không ở trạng thái đang mượn.");
 
-        var today = DateOnly.FromDateTime(DateTime.UtcNow);
-        if (detail.LoanSlip.DueDate < today)
-            return ApiResponse<long>.Fail("Không thể gia hạn sách đã quá hạn trả.");
+        // Kiểm tra đã có yêu cầu Pending chưa
+        var hasPending = detail.Renewals.Any(r => r.Status == RenewalStatus.Pending);
+        if (hasPending)
+            return ApiResponse<long>.Fail("Đã có yêu cầu gia hạn đang chờ xử lý.");
 
-        if (detail.Renewals.Any(r => r.Status == RenewalStatus.Pending))
-            return ApiResponse<long>.Fail("Đang có yêu cầu gia hạn chờ duyệt cho cuốn sách này.");
+        // Kiểm tra số lần gia hạn tối đa dựa trên số lần đã được duyệt
+        var approvedCount = detail.Renewals.Count(r => r.Status == RenewalStatus.Approved);
+        if (approvedCount >= MaxRenewals)
+            return ApiResponse<long>.Fail($"Đã đạt giới hạn {MaxRenewals} lần gia hạn.");
 
-        var approvedRenewals = detail.Renewals.Count(r => r.Status == RenewalStatus.Approved);
-        if (approvedRenewals >= 2)
-            return ApiResponse<long>.Fail("Sách này đã đạt số lần gia hạn tối đa cho phép (tối đa 2 lần).");
+        // Tính ngày hết hạn hiện tại của bản sao sách
+        var currentDueDate = detail.GetEffectiveDueDate();
+        if (currentDueDate == default)
+            currentDueDate = detail.LoanSlip.DueDate;
 
-        if (request.NewDueDate <= detail.LoanSlip.DueDate)
-            return ApiResponse<long>.Fail("Ngày gia hạn mới phải lớn hơn hạn trả hiện tại.");
+        // NewDueDate phải lớn hơn DueDate hiện tại của cuốn sách
+        if (request.NewDueDate <= currentDueDate)
+            return ApiResponse<long>.Fail("Ngày gia hạn phải lớn hơn ngày hết hạn hiện tại của sách.");
 
-        var renewalCount = detail.Renewals.Count;
         var renewal = new Renewal
         {
             LoanSlipDetailId = request.LoanSlipDetailId,
-            RenewalNumber = (byte)(renewalCount + 1),
-            OldDueDate = detail.LoanSlip.DueDate,
+            RenewalNumber = (byte)(approvedCount + 1),
+            OldDueDate = currentDueDate,
             NewDueDate = request.NewDueDate,
             Reason = request.Reason,
             Status = RenewalStatus.Pending

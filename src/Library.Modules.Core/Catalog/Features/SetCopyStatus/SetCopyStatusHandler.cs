@@ -1,5 +1,5 @@
-using Library.Modules.Core.Catalog.Contracts;
-using Library.Modules.Core.Shared;
+﻿using Library.Modules.Core.Catalog.Contracts;
+using Library.Modules.Core.Catalog.Data;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 
@@ -7,9 +7,9 @@ namespace Library.Modules.Core.Catalog.Features.SetCopyStatus;
 
 public sealed class SetCopyStatusHandler : IRequestHandler<SetCopyStatusCommand, bool>
 {
-    private readonly AppDbContext _db;
+    private readonly CatalogDbContext _db;
 
-    public SetCopyStatusHandler(AppDbContext db)
+    public SetCopyStatusHandler(CatalogDbContext db)
     {
         _db = db;
     }
