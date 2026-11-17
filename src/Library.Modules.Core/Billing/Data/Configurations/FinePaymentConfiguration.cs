@@ -7,12 +7,7 @@ public class FinePaymentConfiguration : IEntityTypeConfiguration<FinePayment>
 {
     public void Configure(EntityTypeBuilder<FinePayment> builder)
     {
-        builder.ToTable("FinePayments", t =>
-        {
-            t.HasCheckConstraint("CK_FinePayments_Amount", "[Amount] > 0");
-            t.HasCheckConstraint("CK_FinePayments_PaymentMethod", "[PaymentMethod] IN (N'Cash', N'BankTransfer', N'Other')");
-        });
-
+        builder.ToTable("FinePayments");
         builder.HasKey(p => p.Id);
 
         builder.Property(p => p.Amount).HasPrecision(18, 2).IsRequired();
@@ -23,14 +18,14 @@ public class FinePaymentConfiguration : IEntityTypeConfiguration<FinePayment>
             .HasConversion<string>()
             .HasMaxLength(30);
 
-        // Indexes
-        builder.HasIndex(p => p.FineId)
-            .HasDatabaseName("IX_FinePayments_FineId");
+        // Check constraints
+        builder.ToTable("FinePayments", t =>
+        {
+            t.HasCheckConstraint("CK_FinePayments_Amount", "[Amount] > 0");
+            t.HasCheckConstraint("CK_FinePayments_PaymentMethod", "[PaymentMethod] IN (N'Cash', N'BankTransfer', N'Other')");
+        });
 
-        builder.HasIndex(p => p.LibrarianId)
-            .HasDatabaseName("IX_FinePayments_LibrarianId");
-
-        // SQL: FK_FinePayments_Fines FOREIGN KEY (FineId) REFERENCES Fines (Id) ON DELETE NO ACTION
+        // FK → Fines (NO ACTION — bảo vệ dữ liệu kế toán)
         builder.HasOne(p => p.Fine)
             .WithMany(f => f.Payments)
             .HasForeignKey(p => p.FineId)

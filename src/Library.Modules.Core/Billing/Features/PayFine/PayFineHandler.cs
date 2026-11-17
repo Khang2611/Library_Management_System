@@ -1,5 +1,4 @@
 using FluentValidation;
-using Library.Modules.Core.Billing.Contracts;
 using Library.Modules.Core.Billing.Data;
 using Library.Modules.Core.Shared;
 using MediatR;
@@ -23,31 +22,29 @@ public sealed class PayFineHandler : IRequestHandler<PayFineRequest, ApiResponse
         var val = await _validator.ValidateAsync(request, ct);
         if (!val.IsValid) return ApiResponse<bool>.Fail(string.Join("; ", val.Errors.Select(e => e.ErrorMessage)));
 
-        var fine = await _db.Set<Fine>()
-            .Include(f => f.Payments)
+        var fine = await _db.Fines
             .FirstOrDefaultAsync(f => f.Id == request.FineId, ct);
 
         if (fine == null) return ApiResponse<bool>.Fail("Phiếu phạt không tồn tại.");
-        if (fine.Status == FineStatus.Paid || fine.Status == FineStatus.Cancelled)
+        if (fine.Status != FineStatus.Unpaid)
             return ApiResponse<bool>.Fail("Phiếu phạt đã được thanh toán hoặc hủy.");
 
-        var totalPaid = fine.Payments.Sum(p => p.Amount) + request.Amount;
-        if (totalPaid > fine.Amount)
-            return ApiResponse<bool>.Fail("Số tiền thanh toán vượt quá số tiền phạt.");
-
+        // Thanh toán trực tiếp trọn gói 1 lần: quyết toán đủ 100% số tiền phạt
         var payment = new FinePayment
         {
-            FineId = request.FineId,
+            FineId = fine.Id,
             LibrarianId = request.LibrarianId,
-            Amount = request.Amount,
+            Amount = fine.Amount,
             PaymentMethod = request.PaymentMethod,
-            Notes = request.Notes,
+            Notes = string.IsNullOrWhiteSpace(request.Notes) ? "Thanh toán trực tiếp tại quầy" : request.Notes.Trim(),
             PaidAt = DateTime.UtcNow
         };
 
-        _db.Set<FinePayment>().Add(payment);
+        _db.FinePayments.Add(payment);
 
-        fine.Status = totalPaid == fine.Amount ? FineStatus.Paid : FineStatus.PartiallyPaid;
+        fine.Status = FineStatus.Paid;
+        fine.UpdatedAt = DateTime.UtcNow;
+        fine.UpdatedBy = request.LibrarianId;
 
         await _db.SaveChangesAsync(ct);
         return ApiResponse<bool>.Ok(true);

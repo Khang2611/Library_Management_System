@@ -1,3 +1,4 @@
+using Library.Modules.Core.Billing.Data;
 using Microsoft.EntityFrameworkCore;
 
 namespace Library.Modules.Core.Billing.Data;
@@ -12,8 +13,9 @@ public class BillingDbContext(DbContextOptions<BillingDbContext> options) : DbCo
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.HasDefaultSchema(Schema);
-        modelBuilder.ApplyConfigurationsFromAssembly(typeof(BillingDbContext).Assembly,
+
+        modelBuilder.ApplyConfigurationsFromAssembly(
+            typeof(BillingDbContext).Assembly,
             t => t.Namespace?.StartsWith("Library.Modules.Core.Billing") == true);
     }
 }
-

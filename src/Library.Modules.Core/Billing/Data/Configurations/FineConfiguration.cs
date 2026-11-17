@@ -1,4 +1,3 @@
-using Library.Modules.Core.Billing.Contracts;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -8,13 +7,7 @@ public class FineConfiguration : IEntityTypeConfiguration<Fine>
 {
     public void Configure(EntityTypeBuilder<Fine> builder)
     {
-        builder.ToTable("Fines", t =>
-        {
-            t.HasCheckConstraint("CK_Fines_Amount", "[Amount] > 0");
-            t.HasCheckConstraint("CK_Fines_FineType", "[FineType] IN (N'Overdue', N'Compensation', N'Other')");
-            t.HasCheckConstraint("CK_Fines_Status", "[Status] IN (N'Unpaid', N'PartiallyPaid', N'Paid', N'Cancelled')");
-        });
-
+        builder.ToTable("Fines");
         builder.HasKey(f => f.Id);
 
         builder.Property(f => f.Amount).HasPrecision(18, 2).IsRequired();
@@ -29,23 +22,18 @@ public class FineConfiguration : IEntityTypeConfiguration<Fine>
             .HasMaxLength(20)
             .HasDefaultValue(FineStatus.Unpaid);
 
-        // Indexes
-        builder.HasIndex(f => f.AccountId)
-            .HasDatabaseName("IX_Fines_AccountId");
+        // Check constraints
+        builder.ToTable("Fines", t =>
+        {
+            t.HasCheckConstraint("CK_Fines_Amount", "[Amount] > 0");
+            t.HasCheckConstraint("CK_Fines_FineType", "[FineType] IN (N'Overdue', N'Compensation', N'Other')");
+            t.HasCheckConstraint("CK_Fines_Status", "[Status] IN (N'Unpaid', N'PartiallyPaid', N'Paid', N'Cancelled')");
+        });
 
-        builder.HasIndex(f => f.LoanSlipDetailId)
-            .HasDatabaseName("IX_Fines_LoanSlipDetailId");
-
-        builder.HasIndex(f => f.IncidentId)
-            .HasDatabaseName("IX_Fines_IncidentId");
-
-        builder.HasIndex(f => f.Status)
-            .HasDatabaseName("IX_Fines_Status");
-
-        // Within Billing context
+        // Within Billing context — Restrict để bảo toàn dữ liệu kế toán
         builder.HasMany(f => f.Payments)
             .WithOne(p => p.Fine)
             .HasForeignKey(p => p.FineId)
-            .OnDelete(DeleteBehavior.Cascade);
+            .OnDelete(DeleteBehavior.Restrict);
     }
 }

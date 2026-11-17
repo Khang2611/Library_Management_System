@@ -12,16 +12,18 @@ public static class PayFineEndpoint
     public static IEndpointRouteBuilder Map(IEndpointRouteBuilder app)
     {
         app.MapPost("/api/billing/fines/{fineId:long}/payments",
-            async (long fineId, PayFineRequest req, ClaimsPrincipal user, IMediator mediator, CancellationToken ct) =>
+            async (long fineId, PayFineBody? body, ClaimsPrincipal user, IMediator mediator, CancellationToken ct) =>
             {
-                var finalReq = user.IsStaff() && !req.LibrarianId.HasValue
-                    ? req with { FineId = fineId, LibrarianId = user.GetAccountId() }
-                    : req with { FineId = fineId };
-                return Results.Ok(await mediator.Send(finalReq, ct));
+                var method = body?.PaymentMethod ?? Data.PaymentMethod.Cash;
+                var notes = body?.Notes;
+                var librarianId = user.GetAccountId();
+
+                var req = new PayFineRequest(fineId, librarianId, method, notes);
+                return Results.Ok(await mediator.Send(req, ct));
             })
            .WithTags("Billing")
-           .WithSummary("Record a payment towards a fine")
-           .RequireAuthorization();
+           .WithSummary("Thanh toán trực tiếp toàn bộ tiền phạt một lần (StaffOnly)")
+           .RequireAuthorization("StaffOnly");
 
         return app;
     }
