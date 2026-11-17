@@ -18,7 +18,7 @@ namespace Library.Modules.Core.Search.Data.Migrations
 #pragma warning disable 612, 618
             modelBuilder
                 .HasDefaultSchema("search")
-                .HasAnnotation("ProductVersion", "10.0.12")
+                .HasAnnotation("ProductVersion", "10.0.11")
                 .HasAnnotation("Relational:MaxIdentifierLength", 128);
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
@@ -55,9 +55,6 @@ namespace Library.Modules.Core.Search.Data.Migrations
                         .HasDefaultValueSql("SYSDATETIME()");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("AccountId")
-                        .HasDatabaseName("IX_SearchHistories_AccountId");
 
                     b.ToTable("SearchHistories", "search", t =>
                         {
