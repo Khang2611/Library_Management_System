@@ -11,7 +11,7 @@ public class LoanSlipConfiguration : IEntityTypeConfiguration<LoanSlip>
         builder.ToTable("LoanSlips");
         builder.HasKey(ls => ls.Id);
 
-        builder.Property(ls => ls.BorrowedAt).HasDefaultValueSql("SYSDATETIME()");
+        builder.Property(ls => ls.BorrowedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
         builder.Property(ls => ls.Notes).HasMaxLength(500);
 
         builder.Property(ls => ls.Status)
@@ -26,7 +26,7 @@ public class LoanSlipConfiguration : IEntityTypeConfiguration<LoanSlip>
         builder.ToTable("LoanSlips", t =>
         {
             t.HasCheckConstraint("CK_LoanSlips_DueDate", "[DueDate] >= CAST([BorrowedAt] AS DATE)");
-            t.HasCheckConstraint("CK_LoanSlips_Status", "[Status] IN (N'Pending', N'Borrowing', N'Returned', N'Overdue', N'Cancelled')");
+            t.HasCheckConstraint("CK_LoanSlips_Status", "\"Status\" IN (N'Pending', N'Borrowing', N'Returned', N'Overdue', N'Cancelled')");
         });
 
         // Within Circulation context navigation

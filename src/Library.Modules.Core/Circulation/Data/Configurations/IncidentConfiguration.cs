@@ -15,7 +15,7 @@ public class IncidentConfiguration : IEntityTypeConfiguration<Incident>
         builder.Property(i => i.CompensationAmount)
             .HasPrecision(18, 2)
             .HasDefaultValue(0m);
-        builder.Property(i => i.RecordedAt).HasDefaultValueSql("SYSDATETIME()");
+        builder.Property(i => i.RecordedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
 
         builder.Property(i => i.IncidentType)
             .HasConversion<string>()
@@ -36,7 +36,7 @@ public class IncidentConfiguration : IEntityTypeConfiguration<Incident>
             t.HasCheckConstraint("CK_Incidents_CompensationAmount", "[CompensationAmount] >= 0");
             t.HasCheckConstraint("CK_Incidents_IncidentType", "[IncidentType] IN (N'Lost', N'Damaged')");
             t.HasCheckConstraint("CK_Incidents_Severity", "[Severity] IN (N'Minor', N'Major', N'TotalLoss')");
-            t.HasCheckConstraint("CK_Incidents_Status", "[Status] IN (N'Recorded', N'Resolved', N'Cancelled')");
+            t.HasCheckConstraint("CK_Incidents_Status", "\"Status\" IN (N'Recorded', N'Resolved', N'Cancelled')");
         });
 
         builder.HasOne(i => i.LoanSlipDetail)

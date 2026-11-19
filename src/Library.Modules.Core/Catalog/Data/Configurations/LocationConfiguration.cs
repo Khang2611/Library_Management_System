@@ -25,7 +25,7 @@ public class LocationConfiguration : IEntityTypeConfiguration<Location>
             .HasDefaultValue(true);
 
         builder.Property(l => l.CreatedAt)
-            .HasDefaultValueSql("SYSDATETIME()");
+            .HasDefaultValueSql("CURRENT_TIMESTAMP");
 
         // UQ: (Aisle, Shelf, RowLevel) phải là tọa độ duy nhất
         builder.HasIndex(l => new { l.Aisle, l.Shelf, l.RowLevel })

@@ -18,6 +18,6 @@ public class AuthorConfiguration : IEntityTypeConfiguration<Author>
             .HasColumnType("nvarchar(max)");
 
         builder.Property(a => a.CreatedAt)
-            .HasDefaultValueSql("SYSDATETIME()");
+            .HasDefaultValueSql("CURRENT_TIMESTAMP");
     }
 }

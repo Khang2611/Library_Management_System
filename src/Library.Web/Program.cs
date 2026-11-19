@@ -101,15 +101,12 @@ builder.Services.AddHostedService<Library.Web.BackgroundJobs.OverdueCheckWorker>
 
 var app = builder.Build();
 
-if (app.Environment.IsDevelopment())
-{
-    app.UseSwagger();
-    app.UseSwaggerUI();
-}
+app.UseSwagger();
+app.UseSwaggerUI();
 
 app.UseMiddleware<Library.Web.Middleware.GlobalExceptionMiddleware>();
 app.UseCors();
-app.UseHttpsRedirection();
+// app.UseHttpsRedirection(); // Tắt HTTPS redirect khi chạy HTTP (Docker cổng 8082 / Local 5217) để tránh lỗi CORS / ERR_SSL_PROTOCOL_ERROR trên Frontend
 app.UseAuthentication();
 app.UseAuthorization();
 
@@ -142,6 +139,25 @@ Library.Modules.Core.Billing.Features.GetMyFines.GetMyFinesEndpoint.Map(app);
 Library.Modules.Core.Billing.Features.GetAllFines.GetAllFinesEndpoint.Map(app);
 
 // ── Database Schema Migration & Default Admin Seeding ─────────────────────────
+try
+{
+    var csb = new Microsoft.Data.SqlClient.SqlConnectionStringBuilder(connectionString);
+    var targetDb = csb.InitialCatalog;
+    if (!string.IsNullOrEmpty(targetDb) && !targetDb.Equals("master", StringComparison.OrdinalIgnoreCase))
+    {
+        var masterCsb = new Microsoft.Data.SqlClient.SqlConnectionStringBuilder(connectionString) { InitialCatalog = "master" };
+        using var masterConn = new Microsoft.Data.SqlClient.SqlConnection(masterCsb.ConnectionString);
+        await masterConn.OpenAsync();
+        using var cmd = masterConn.CreateCommand();
+        cmd.CommandText = $"IF NOT EXISTS (SELECT name FROM sys.databases WHERE name = '{targetDb}') CREATE DATABASE [{targetDb}]";
+        await cmd.ExecuteNonQueryAsync();
+    }
+}
+catch (Exception ex)
+{
+    app.Logger.LogWarning("Auto-create DB check skipped: {Msg}", ex.Message);
+}
+
 using (var scope = app.Services.CreateScope())
 {
     var identityDb = scope.ServiceProvider.GetRequiredService<IdentityDbContext>();
@@ -160,14 +176,10 @@ using (var scope = app.Services.CreateScope())
         await notificationsDb.Database.MigrateAsync();
         await searchDb.Database.MigrateAsync();
     }
-    catch
+    catch (Exception ex)
     {
-        await identityDb.Database.EnsureCreatedAsync();
-        await catalogDb.Database.EnsureCreatedAsync();
-        await circulationDb.Database.EnsureCreatedAsync();
-        await billingDb.Database.EnsureCreatedAsync();
-        await notificationsDb.Database.EnsureCreatedAsync();
-        await searchDb.Database.EnsureCreatedAsync();
+        app.Logger.LogError(ex, "Lỗi khi chạy Migration: {Msg}", ex.Message);
+        throw;
     }
 
     var sender = scope.ServiceProvider.GetRequiredService<ISender>();
