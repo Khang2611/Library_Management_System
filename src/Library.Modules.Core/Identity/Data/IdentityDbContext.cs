@@ -8,6 +8,8 @@ public class IdentityDbContext(DbContextOptions<IdentityDbContext> options) : Db
 
     public DbSet<Account> Accounts => Set<Account>();
     public DbSet<LoginSession> LoginSessions => Set<LoginSession>();
+    public DbSet<EmailVerificationOtp> EmailVerificationOtps => Set<EmailVerificationOtp>();
+    public DbSet<PasswordResetToken> PasswordResetTokens => Set<PasswordResetToken>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

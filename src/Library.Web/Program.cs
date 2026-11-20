@@ -115,6 +115,10 @@ app.UseAuthorization();
 // ── Identity ──────────────────────────────────────────────────────────────────
 RegisterEndpoint.Map(app);
 LoginEndpoint.Map(app);
+Library.Modules.Core.Identity.Features.VerifyEmailOtp.VerifyEmailOtpEndpoint.Map(app);
+Library.Modules.Core.Identity.Features.ResendEmailOtp.ResendEmailOtpEndpoint.Map(app);
+Library.Modules.Core.Identity.Features.ForgotPassword.ForgotPasswordEndpoint.Map(app);
+Library.Modules.Core.Identity.Features.ResetPassword.ResetPasswordEndpoint.Map(app);
 UpdateProfileEndpoint.Map(app);
 Library.Modules.Core.Identity.Features.ManageUsers.ManageUsersEndpoint.Map(app);
 Library.Modules.Core.Identity.Features.ChangePassword.ChangePasswordEndpoint.Map(app);
@@ -143,16 +147,22 @@ Library.Modules.Core.Billing.Features.GetAllFines.GetAllFinesEndpoint.Map(app);
 // ── Database Schema Migration & Default Admin Seeding ─────────────────────────
 try
 {
-    var csb = new Microsoft.Data.SqlClient.SqlConnectionStringBuilder(connectionString);
-    var targetDb = csb.InitialCatalog;
-    if (!string.IsNullOrEmpty(targetDb) && !targetDb.Equals("master", StringComparison.OrdinalIgnoreCase))
+    var csb = new Npgsql.NpgsqlConnectionStringBuilder(connectionString);
+    var targetDb = csb.Database;
+    if (!string.IsNullOrEmpty(targetDb) && !targetDb.Equals("postgres", StringComparison.OrdinalIgnoreCase))
     {
-        var masterCsb = new Microsoft.Data.SqlClient.SqlConnectionStringBuilder(connectionString) { InitialCatalog = "master" };
-        using var masterConn = new Microsoft.Data.SqlClient.SqlConnection(masterCsb.ConnectionString);
-        await masterConn.OpenAsync();
-        using var cmd = masterConn.CreateCommand();
-        cmd.CommandText = $"IF NOT EXISTS (SELECT name FROM sys.databases WHERE name = '{targetDb}') CREATE DATABASE [{targetDb}]";
-        await cmd.ExecuteNonQueryAsync();
+        var adminCsb = new Npgsql.NpgsqlConnectionStringBuilder(connectionString) { Database = "postgres" };
+        await using var adminConn = new Npgsql.NpgsqlConnection(adminCsb.ConnectionString);
+        await adminConn.OpenAsync();
+        await using var checkCmd = adminConn.CreateCommand();
+        checkCmd.CommandText = $"SELECT 1 FROM pg_database WHERE datname = '{targetDb}'";
+        var exists = await checkCmd.ExecuteScalarAsync();
+        if (exists == null)
+        {
+            await using var createCmd = adminConn.CreateCommand();
+            createCmd.CommandText = $"CREATE DATABASE \"{targetDb}\"";
+            await createCmd.ExecuteNonQueryAsync();
+        }
     }
 }
 catch (Exception ex)

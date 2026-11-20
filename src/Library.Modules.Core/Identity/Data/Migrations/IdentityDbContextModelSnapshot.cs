@@ -18,7 +18,7 @@ namespace Library.Modules.Core.Identity.Data.Migrations
 #pragma warning disable 612, 618
             modelBuilder
                 .HasDefaultSchema("identity")
-                .HasAnnotation("ProductVersion", "10.0.11")
+                .HasAnnotation("ProductVersion", "10.0.12")
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
@@ -37,7 +37,7 @@ namespace Library.Modules.Core.Identity.Data.Migrations
 
                     b.Property<DateTime>("CreatedAt")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("timestamp without time zone")
+                        .HasColumnType("timestamp with time zone")
                         .HasDefaultValueSql("CURRENT_TIMESTAMP");
 
                     b.Property<int?>("CreatedBy")
@@ -47,7 +47,7 @@ namespace Library.Modules.Core.Identity.Data.Migrations
                         .HasColumnType("date");
 
                     b.Property<DateTime?>("DeactivatedAt")
-                        .HasColumnType("timestamp without time zone");
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("Email")
                         .IsRequired()
@@ -61,7 +61,7 @@ namespace Library.Modules.Core.Identity.Data.Migrations
                         .HasColumnType("character varying(150)");
 
                     b.Property<DateTime?>("LastLoginAt")
-                        .HasColumnType("timestamp without time zone");
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("PasswordHash")
                         .IsRequired()
@@ -78,11 +78,11 @@ namespace Library.Modules.Core.Identity.Data.Migrations
                         .HasMaxLength(20)
                         .HasColumnType("character varying(20)");
 
-                    b.Property<uint>("RowVersion")
+                    b.Property<byte[]>("RowVersion")
                         .IsConcurrencyToken()
+                        .IsRequired()
                         .ValueGeneratedOnAddOrUpdate()
-                        .HasColumnType("xid")
-                        .HasColumnName("xmin");
+                        .HasColumnType("bytea");
 
                     b.Property<string>("Status")
                         .IsRequired()
@@ -92,7 +92,7 @@ namespace Library.Modules.Core.Identity.Data.Migrations
                         .HasDefaultValue("Active");
 
                     b.Property<DateTime?>("UpdatedAt")
-                        .HasColumnType("timestamp without time zone");
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<int?>("UpdatedBy")
                         .HasColumnType("integer");
@@ -137,7 +137,7 @@ namespace Library.Modules.Core.Identity.Data.Migrations
 
                     b.Property<DateTime>("CreatedAt")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("timestamp without time zone")
+                        .HasColumnType("timestamp with time zone")
                         .HasDefaultValueSql("CURRENT_TIMESTAMP");
 
                     b.Property<string>("Email")
@@ -147,7 +147,7 @@ namespace Library.Modules.Core.Identity.Data.Migrations
                         .HasColumnType("character varying(150)");
 
                     b.Property<DateTime>("ExpiresAt")
-                        .HasColumnType("timestamp without time zone");
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<int>("FailedAttempts")
                         .ValueGeneratedOnAdd()
@@ -161,7 +161,7 @@ namespace Library.Modules.Core.Identity.Data.Migrations
                         .HasColumnType("character varying(64)");
 
                     b.Property<DateTime?>("UsedAt")
-                        .HasColumnType("timestamp without time zone");
+                        .HasColumnType("timestamp with time zone");
 
                     b.HasKey("Id");
 
@@ -184,7 +184,7 @@ namespace Library.Modules.Core.Identity.Data.Migrations
                         .HasColumnType("integer");
 
                     b.Property<DateTime>("ExpiresAt")
-                        .HasColumnType("timestamp without time zone");
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("IpAddress")
                         .HasMaxLength(45)
@@ -192,11 +192,11 @@ namespace Library.Modules.Core.Identity.Data.Migrations
 
                     b.Property<DateTime>("LoggedInAt")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("timestamp without time zone")
+                        .HasColumnType("timestamp with time zone")
                         .HasDefaultValueSql("CURRENT_TIMESTAMP");
 
                     b.Property<DateTime?>("LoggedOutAt")
-                        .HasColumnType("timestamp without time zone");
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("RefreshTokenHash")
                         .HasMaxLength(255)
@@ -212,7 +212,7 @@ namespace Library.Modules.Core.Identity.Data.Migrations
 
                     b.ToTable("LoginSessions", "identity", t =>
                         {
-                            t.HasCheckConstraint("CK_LoginSessions_ExpiresAt", "\"ExpiresAt\" > \"LoggedInAt\"");
+                            t.HasCheckConstraint("CK_LoginSessions_ExpiresAt", "[ExpiresAt] > [LoggedInAt]");
                         });
                 });
 
@@ -229,11 +229,11 @@ namespace Library.Modules.Core.Identity.Data.Migrations
 
                     b.Property<DateTime>("CreatedAt")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("timestamp without time zone")
+                        .HasColumnType("timestamp with time zone")
                         .HasDefaultValueSql("CURRENT_TIMESTAMP");
 
                     b.Property<DateTime>("ExpiresAt")
-                        .HasColumnType("timestamp without time zone");
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("OtpHash")
                         .HasMaxLength(256)
@@ -245,7 +245,7 @@ namespace Library.Modules.Core.Identity.Data.Migrations
                         .HasColumnType("character varying(256)");
 
                     b.Property<DateTime?>("UsedAt")
-                        .HasColumnType("timestamp without time zone");
+                        .HasColumnType("timestamp with time zone");
 
                     b.HasKey("Id");
 
