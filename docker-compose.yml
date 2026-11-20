@@ -35,6 +35,14 @@ services:
       - AdminSeed__Password=${ADMIN_PASSWORD}
       - AdminSeed__Email=${ADMIN_EMAIL}
       - AdminSeed__FullName=${ADMIN_FULLNAME}
+      - Smtp__Host=${SMTP_HOST}
+      - Smtp__Port=${SMTP_PORT:-587}
+      - Smtp__Username=${SMTP_USERNAME}
+      - Smtp__Password=${SMTP_PASSWORD}
+      - Smtp__FromEmail=${SMTP_FROM_EMAIL}
+      - Smtp__FromName=${SMTP_FROM_NAME}
+      - Smtp__EnableSsl=${SMTP_ENABLE_SSL:-true}
+      - FrontendUrl=${FRONTEND_URL:-http://localhost:5173}
     ports:
       - "8082:8080"
     depends_on:

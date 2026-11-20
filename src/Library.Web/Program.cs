@@ -99,6 +99,8 @@ builder.Services.AddCors(options =>
 // ── Background Jobs ───────────────────────────────────────────────────────────
 builder.Services.AddHostedService<Library.Web.BackgroundJobs.OverdueCheckWorker>();
 
+builder.Services.AddScoped<Library.Modules.Core.Notifications.Services.IEmailService, Library.Modules.Core.Notifications.Services.EmailService>();
+
 var app = builder.Build();
 
 app.UseSwagger();
