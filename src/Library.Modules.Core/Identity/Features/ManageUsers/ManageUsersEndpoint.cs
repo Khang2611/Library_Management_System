@@ -7,7 +7,7 @@ using Microsoft.AspNetCore.Routing;
 namespace Library.Modules.Core.Identity.Features.ManageUsers;
 
 public record ChangeRoleBody(AccountRole? Role, AccountRole? NewRole);
-public record ChangeStatusBody(AccountStatus? Status, AccountStatus? NewStatus);
+public record ChangeStatusBody(AccountStatus? Status, AccountStatus? NewStatus, string? LockReason = null, string? Reason = null);
 
 public static class ManageUsersEndpoint
 {
@@ -31,7 +31,8 @@ public static class ManageUsersEndpoint
         group.MapPatch("/{id:int}/status", async (int id, ChangeStatusBody body, IMediator mediator, CancellationToken ct) =>
         {
             var targetStatus = body.NewStatus ?? body.Status ?? AccountStatus.Active;
-            return Results.Ok(await mediator.Send(new ChangeStatusRequest(id, targetStatus), ct));
+            var reason = body.LockReason ?? body.Reason;
+            return Results.Ok(await mediator.Send(new ChangeStatusRequest(id, targetStatus, reason), ct));
         })
         .WithSummary("Change user status (Admin only)")
         .RequireAuthorization("AdminOnly");

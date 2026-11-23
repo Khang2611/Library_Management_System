@@ -1,6 +1,7 @@
 using FluentValidation;
 using Library.Modules.Core.Identity.Data;
 using Library.Modules.Core.Shared;
+using Library.Modules.Core.Shared.Events;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 
@@ -14,12 +15,18 @@ public sealed class ManageUsersHandler :
     private readonly IdentityDbContext _db;
     private readonly IValidator<ChangeRoleRequest> _roleValidator;
     private readonly IValidator<ChangeStatusRequest> _statusValidator;
+    private readonly IPublisher _mediator;
 
-    public ManageUsersHandler(IdentityDbContext db, IValidator<ChangeRoleRequest> roleValidator, IValidator<ChangeStatusRequest> statusValidator)
+    public ManageUsersHandler(
+        IdentityDbContext db, 
+        IValidator<ChangeRoleRequest> roleValidator, 
+        IValidator<ChangeStatusRequest> statusValidator,
+        IPublisher mediator)
     {
         _db = db;
         _roleValidator = roleValidator;
         _statusValidator = statusValidator;
+        _mediator = mediator;
     }
 
     public async Task<ApiResponse<GetUsersResult>> Handle(GetUsersRequest request, CancellationToken ct)
@@ -95,6 +102,12 @@ public sealed class ManageUsersHandler :
         }
 
         await _db.SaveChangesAsync(ct);
+
+        if (request.NewStatus == AccountStatus.Locked)
+        {
+            await _mediator.Publish(new AccountLockedEvent(account.Id, request.LockReason ?? "Tài khoản bị khóa bởi quản trị viên"), ct);
+        }
+
         return ApiResponse<bool>.Ok(true);
     }
 }

@@ -100,6 +100,15 @@ public sealed class ReserveBookHandler : IRequestHandler<ReserveBookRequest, Api
                 reservation.BookCopyId,
                 reservation.ExpiresAt), ct);
         }
+        else
+        {
+            await _mediator.Publish(new ReservationCreatedEvent(
+                reservation.Id,
+                reservation.AccountId,
+                reservation.BookId,
+                false,
+                reservation.ExpiresAt), ct);
+        }
 
         return ApiResponse<long>.Ok(reservation.Id);
     }
