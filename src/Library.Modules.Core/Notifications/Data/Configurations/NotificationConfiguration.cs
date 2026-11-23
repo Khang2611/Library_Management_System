@@ -22,7 +22,7 @@ public class NotificationConfiguration : IEntityTypeConfiguration<Notification>
 
         builder.ToTable("Notifications", t =>
         {
-            t.HasCheckConstraint("CK_Notifications_NotificationType", "[NotificationType] IN (N'Reserve', N'Borrow', N'Return', N'Fine', N'System')");
+            t.HasCheckConstraint("CK_Notifications_NotificationType", "\"NotificationType\" IN ('Reserve', 'Borrow', 'Return', 'Fine', 'System')");
         });
     }
 }

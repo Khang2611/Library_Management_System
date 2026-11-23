@@ -18,6 +18,6 @@ public class SearchHistoryConfiguration : IEntityTypeConfiguration<SearchHistory
         // CK_LichSuTimKiem_SoKetQua
         builder.ToTable(t => t.HasCheckConstraint(
             "CK_SearchHistories_ResultCount",
-            "[ResultCount] IS NULL OR [ResultCount] >= 0"));
+            "\"ResultCount\" IS NULL OR \"ResultCount\" >= 0"));
     }
 }

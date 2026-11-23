@@ -33,10 +33,10 @@ public class IncidentConfiguration : IEntityTypeConfiguration<Incident>
         // Check constraints
         builder.ToTable("Incidents", t =>
         {
-            t.HasCheckConstraint("CK_Incidents_CompensationAmount", "[CompensationAmount] >= 0");
-            t.HasCheckConstraint("CK_Incidents_IncidentType", "[IncidentType] IN (N'Lost', N'Damaged')");
-            t.HasCheckConstraint("CK_Incidents_Severity", "[Severity] IN (N'Minor', N'Major', N'TotalLoss')");
-            t.HasCheckConstraint("CK_Incidents_Status", "\"Status\" IN (N'Recorded', N'Resolved', N'Cancelled')");
+            t.HasCheckConstraint("CK_Incidents_CompensationAmount", "\"CompensationAmount\" >= 0");
+            t.HasCheckConstraint("CK_Incidents_IncidentType", "\"IncidentType\" IN ('Lost', 'Damaged')");
+            t.HasCheckConstraint("CK_Incidents_Severity", "\"Severity\" IN ('Minor', 'Major', 'TotalLoss')");
+            t.HasCheckConstraint("CK_Incidents_Status", "\"Status\" IN ('Recorded', 'Resolved', 'Cancelled')");
         });
 
         builder.HasOne(i => i.LoanSlipDetail)

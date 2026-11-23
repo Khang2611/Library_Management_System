@@ -35,8 +35,8 @@ public class LocationConfiguration : IEntityTypeConfiguration<Location>
         // Check constraints
         builder.ToTable("Locations", t =>
         {
-            t.HasCheckConstraint("CK_Locations_RowLevel", "[RowLevel] > 0");
-            t.HasCheckConstraint("CK_Locations_MaxCapacity", "[MaxCapacity] IS NULL OR [MaxCapacity] > 0");
+            t.HasCheckConstraint("CK_Locations_RowLevel", "\"RowLevel\" > 0");
+            t.HasCheckConstraint("CK_Locations_MaxCapacity", "\"MaxCapacity\" IS NULL OR \"MaxCapacity\" > 0");
         });
 
         // Navigation: một Location có nhiều BookCopy

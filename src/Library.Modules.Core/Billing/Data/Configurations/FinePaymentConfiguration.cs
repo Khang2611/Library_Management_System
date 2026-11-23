@@ -21,8 +21,8 @@ public class FinePaymentConfiguration : IEntityTypeConfiguration<FinePayment>
         // Check constraints
         builder.ToTable("FinePayments", t =>
         {
-            t.HasCheckConstraint("CK_FinePayments_Amount", "[Amount] > 0");
-            t.HasCheckConstraint("CK_FinePayments_PaymentMethod", "[PaymentMethod] IN (N'Cash', N'BankTransfer', N'Other')");
+            t.HasCheckConstraint("CK_FinePayments_Amount", "\"Amount\" > 0");
+            t.HasCheckConstraint("CK_FinePayments_PaymentMethod", "\"PaymentMethod\" IN ('Cash', 'BankTransfer', 'Other')");
         });
 
         // FK → Fines (NO ACTION — bảo vệ dữ liệu kế toán)

@@ -25,7 +25,7 @@ public class LoginSessionConfiguration : IEntityTypeConfiguration<LoginSession>
         // CK_PhienDangNhap_ThoiGian: ExpiresAt > LoggedInAt
         builder.ToTable(t => t.HasCheckConstraint(
             "CK_LoginSessions_ExpiresAt",
-            "[ExpiresAt] > [LoggedInAt]"));
+            "\"ExpiresAt\" > \"LoggedInAt\""));
 
         // FK → Accounts (NO ACTION — giữ lại session để audit)
         builder.HasOne(ls => ls.Account)

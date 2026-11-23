@@ -24,8 +24,8 @@ public class ReservationConfiguration : IEntityTypeConfiguration<Reservation>
         // Check constraints
         builder.ToTable("Reservations", t =>
         {
-            t.HasCheckConstraint("CK_Reservations_ExpiresAt", "[ExpiresAt] IS NULL OR [ExpiresAt] > [ReservedAt]");
-            t.HasCheckConstraint("CK_Reservations_Status", "\"Status\" IN (N'Waiting', N'Ready', N'Completed', N'Cancelled', N'Expired')");
+            t.HasCheckConstraint("CK_Reservations_ExpiresAt", "\"ExpiresAt\" IS NULL OR \"ExpiresAt\" > \"ReservedAt\"");
+            t.HasCheckConstraint("CK_Reservations_Status", "\"Status\" IN ('Waiting', 'Ready', 'Completed', 'Cancelled', 'Expired')");
         });
     }
 }

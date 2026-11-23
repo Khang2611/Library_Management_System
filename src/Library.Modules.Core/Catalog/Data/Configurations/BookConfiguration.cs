@@ -31,15 +31,15 @@ public class BookConfiguration : IEntityTypeConfiguration<Book>
         builder.Property(b => b.RowVersion)
             .IsRowVersion();
 
-        builder.HasIndex(b => b.Isbn).IsUnique().HasFilter("[Isbn] IS NOT NULL");
+        builder.HasIndex(b => b.Isbn).IsUnique().HasFilter("\"Isbn\" IS NOT NULL");
 
         // Check constraints
         builder.ToTable("Books", t =>
         {
-            t.HasCheckConstraint("CK_Books_PublishedYear", "[PublishedYear] IS NULL OR ([PublishedYear] BETWEEN 1000 AND 2100)");
-            t.HasCheckConstraint("CK_Books_PageCount", "[PageCount] IS NULL OR [PageCount] > 0");
-            t.HasCheckConstraint("CK_Books_BookValue", "[BookValue] IS NULL OR [BookValue] >= 0");
-            t.HasCheckConstraint("CK_Books_Status", "\"Status\" IN (N'Active', N'Inactive')");
+            t.HasCheckConstraint("CK_Books_PublishedYear", "\"PublishedYear\" IS NULL OR (\"PublishedYear\" BETWEEN 1000 AND 2100)");
+            t.HasCheckConstraint("CK_Books_PageCount", "\"PageCount\" IS NULL OR \"PageCount\" > 0");
+            t.HasCheckConstraint("CK_Books_BookValue", "\"BookValue\" IS NULL OR \"BookValue\" >= 0");
+            t.HasCheckConstraint("CK_Books_Status", "\"Status\" IN ('Active', 'Inactive')");
         });
 
         builder.HasMany(b => b.BookAuthors)
