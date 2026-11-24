@@ -43,6 +43,7 @@ public sealed class FindAvailableCopyHandler : IRequestHandler<FindAvailableCopy
         copy.Status,
         copy.Location != null
             ? $"{copy.Location.Aisle} - {copy.Location.Shelf} - Tầng {copy.Location.RowLevel}"
-            : null);
+            : null,
+        copy.Book.BookValue);
 }
 

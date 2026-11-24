@@ -100,6 +100,7 @@ builder.Services.AddCors(options =>
 builder.Services.AddHostedService<Library.Web.BackgroundJobs.OverdueCheckWorker>();
 
 builder.Services.AddScoped<Library.Modules.Core.Notifications.Services.IEmailService, Library.Modules.Core.Notifications.Services.EmailService>();
+builder.Services.AddScoped<Library.Modules.Core.Catalog.Services.IStorageService, Library.Modules.Core.Catalog.Services.CloudflareR2StorageService>();
 
 var app = builder.Build();
 
@@ -134,6 +135,7 @@ SearchBookEndpoint.Map(app);
 ManageCopiesEndpoint.Map(app);
 Library.Modules.Core.Catalog.Features.ManageAuthors.ManageAuthorsEndpoint.Map(app);
 Library.Modules.Core.Catalog.Features.ManageCategories.ManageCategoriesEndpoint.Map(app);
+Library.Modules.Core.Catalog.Features.UploadBookCover.UploadBookCoverEndpoint.Map(app);
 
 // ── Circulation ───────────────────────────────────────────────────────────────
 app.MapCirculationEndpoints();
