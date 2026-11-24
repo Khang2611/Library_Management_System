@@ -24,7 +24,7 @@ services:
         max-file: "3"
   api:
     build:
-      context: .
+      context: ./backend
       dockerfile: Dockerfile
     container_name: thuvien_api
     restart: unless-stopped
