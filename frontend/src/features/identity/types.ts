@@ -25,8 +25,30 @@ export interface RegisterRequest {
   fullName: string
   email: string
   password: string
+  confirmPassword?: string
   phoneNumber?: string
   phone?: string // Tương thích ngược form hiện tại
+  registrationToken?: string
+}
+
+export interface RegisterResponse {
+  accountId: number
+  email: string
+  message: string
+  registrationToken?: string
+  emailSent?: boolean
+  emailError?: string
+}
+
+export interface VerifyEmailOtpRequest {
+  email: string
+  otp: string
+}
+
+export type VerifyEmailOtpResponse = LoginResponse
+
+export interface ResendEmailOtpRequest {
+  email: string
 }
 
 export interface ProfileDto {
@@ -60,4 +82,15 @@ export interface ChangePasswordRequest {
 
 export interface RefreshTokenRequest {
   refreshToken: string
+}
+
+export interface ForgotPasswordRequest {
+  email: string
+}
+
+export interface ResetPasswordRequest {
+  email: string
+  tokenOrOtp: string
+  newPassword: string
+  confirmPassword?: string
 }
