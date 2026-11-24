@@ -5,6 +5,7 @@ import { BookOutlined, CheckCircleOutlined } from '@ant-design/icons'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '@/features/identity'
 import { circulationApi } from '../api'
+import { LIBRARY_RULES } from '@/shared/constants/rules'
 import { modalTitleStyle, primaryButtonStyle, radiusStyle } from '@/shared/styles/ui'
 import { getErrorMessage } from '@/shared/utils/format'
 
@@ -160,7 +161,7 @@ export const ReserveButton: React.FC<ReserveButtonProps> = ({
             {bookTitle || 'Tài liệu thư viện'}
           </div>
           <p style={{ fontSize: 13, color: 'var(--muted-foreground)', margin: 0, lineHeight: 1.6 }}>
-            <strong>Lưu ý:</strong> Khi có bản sao sẵn sàng, thư viện sẽ giữ riêng tài liệu này tại quầy thủ thư cho bạn trong vòng <strong>48 giờ</strong>. Bạn có thể hủy đặt trước bất cứ lúc nào trong trang cá nhân.
+            <strong>Lưu ý:</strong> Mỗi bạn đọc được đặt trước tối đa <strong>{LIBRARY_RULES.maxConcurrentReservations} cuốn</strong> cùng lúc. Khi có bản sao sẵn sàng, thư viện sẽ giữ riêng tài liệu này tại quầy thủ thư cho bạn trong vòng <strong>{LIBRARY_RULES.reservationHoldHours} giờ</strong>. Bạn có thể hủy đặt trước bất cứ lúc nào trong trang cá nhân.
           </p>
         </div>
       </Modal>
