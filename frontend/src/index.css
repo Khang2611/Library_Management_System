@@ -1,0 +1,679 @@
+@charset "UTF-8";
+
+/* ==========================================================================
+   DESIGN SYSTEM — SHADCN-STYLE
+   Nguyên tắc:
+   - Flat color, không gradient, không glassmorphism
+   - Border-driven hierarchy thay vì shadow
+   - border-radius: 6px (--radius)
+   - Spacing scale base-4: 4 8 12 16 20 24 32 40 48 64
+   - Shadow dùng cực kỳ tiết kiệm (chỉ dropdown, popover)
+   ========================================================================== */
+
+/* ---------- TOKENS ---------- */
+:root {
+  /* — Spacing (base-4) — */
+  --sp-1: 4px;
+  --sp-2: 8px;
+  --sp-3: 12px;
+  --sp-4: 16px;
+  --sp-5: 20px;
+  --sp-6: 24px;
+  --sp-8: 32px;
+  --sp-10: 40px;
+  --sp-12: 48px;
+  --sp-16: 64px;
+
+  /* — Radius — */
+  --radius: 6px;
+  --radius-sm: 4px;
+  --radius-full: 9999px;
+
+  /* — Surfaces — */
+  --background: #F3ECDC;
+  --foreground: #2A2118;
+  --card: #FBF7EC;
+  --card-foreground: #2A2118;
+  --muted: #ECE3CF;
+  --muted-foreground: #6B5B4B;
+
+  /* — Borders — */
+  --border: #DECFAA;
+  --border-strong: #B08D3C;
+  --input: #DECFAA;
+  --ring: #1F3A2E;
+
+  /* — Brand / Semantic — */
+  --primary: #1F3A2E;
+  --primary-foreground: #FBF7EC;
+  --primary-hover: #294D3D;
+
+  --secondary: #ECE3CF;
+  --secondary-foreground: #2A2118;
+
+  --accent: #B08D3C;
+  --accent-foreground: #2A2118;
+
+  --destructive: #7A2E2B;
+  --destructive-foreground: #FBF7EC;
+
+  --warning: #B08D3C;
+  --warning-foreground: #2A2118;
+
+  --success: #1F3A2E;
+  --success-foreground: #FBF7EC;
+
+  /* — Typography — */
+  --font-serif: 'Playfair Display', Georgia, serif;
+  --font-sans: 'Be Vietnam Pro', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-mono: 'JetBrains Mono', 'Fira Code', ui-monospace, monospace;
+
+  --text-xs: 12px;
+  --text-sm: 13px;
+  --text-base: 14px;
+  --text-lg: 16px;
+  --text-xl: 18px;
+  --text-2xl: 22px;
+  --text-3xl: 28px;
+
+  --leading-tight: 1.25;
+  --leading-normal: 1.5;
+  --leading-relaxed: 1.65;
+
+  /* — Shadow (chỉ dùng cho overlay: dropdown, popover, modal) — */
+  --shadow-popover: 0 4px 12px rgba(42, 33, 24, 0.08), 0 1px 3px rgba(42, 33, 24, 0.06);
+
+  /* — Transition — */
+  --transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-base: 200ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* ---------- RESET ---------- */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+}
+
+html {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  background-color: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans);
+  font-size: var(--text-base);
+  line-height: var(--leading-normal);
+}
+
+/* ---------- TYPOGRAPHY ---------- */
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-family: var(--font-serif);
+  color: var(--foreground);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  line-height: var(--leading-tight);
+  margin: 0;
+}
+
+h1 {
+  font-size: var(--text-3xl);
+}
+
+h2 {
+  font-size: var(--text-2xl);
+}
+
+h3 {
+  font-size: var(--text-xl);
+}
+
+h4 {
+  font-size: var(--text-lg);
+}
+
+p {
+  margin: 0;
+  line-height: var(--leading-relaxed);
+}
+
+small,
+.text-sm {
+  font-size: var(--text-sm);
+}
+
+.text-muted {
+  color: var(--muted-foreground);
+}
+
+.text-mono {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Số hiệu, mã sách, mã phiếu dạng tabular */
+.tabular-numbers,
+.spine-code,
+.catalog-code {
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---------- CARD (phẳng, border-driven, không shadow) ---------- */
+.catalog-card {
+  background-color: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: var(--sp-5);
+  position: relative;
+  transition: border-color var(--transition-fast);
+}
+
+.catalog-card:hover {
+  border-color: var(--border-strong);
+}
+
+.catalog-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: var(--sp-2);
+  flex-wrap: wrap;
+  margin-bottom: var(--sp-3);
+  border-bottom: 1px dashed var(--border);
+  padding-bottom: var(--sp-2);
+}
+
+/* ---------- BADGE / CALL NUMBER ---------- */
+.catalog-call-number {
+  display: inline-flex;
+  align-items: center;
+  font-size: var(--text-xs);
+  font-weight: 600;
+  color: var(--accent);
+  letter-spacing: 0.04em;
+  font-variant-numeric: tabular-nums;
+  border: 1px solid var(--accent);
+  padding: 2px var(--sp-2);
+  border-radius: var(--radius-sm);
+}
+
+/* ---------- SPINE TAG (badge phẳng, không shadow) ---------- */
+.spine-label {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-1);
+  background-color: var(--primary);
+  color: var(--primary-foreground);
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px var(--sp-2);
+  border-radius: var(--radius-sm);
+  letter-spacing: 0.04em;
+  font-variant-numeric: tabular-nums;
+  border: 1px solid transparent;
+  user-select: none;
+}
+
+.spine-label.warning {
+  background-color: var(--warning);
+  color: var(--warning-foreground);
+  border-color: transparent;
+}
+
+.spine-label.danger {
+  background-color: var(--destructive);
+  color: var(--destructive-foreground);
+  border-color: transparent;
+}
+
+.spine-label.neutral {
+  background-color: var(--muted);
+  color: var(--muted-foreground);
+  border-color: var(--border);
+}
+
+/* ---------- TABLE (Ant Design overrides — flat, border-driven) ---------- */
+.ant-table {
+  background-color: var(--card) !important;
+  color: var(--foreground) !important;
+  border-radius: var(--radius) !important;
+}
+
+.ant-table-thead>tr>th {
+  background-color: var(--muted) !important;
+  color: var(--foreground) !important;
+  font-weight: 600 !important;
+  text-transform: none !important;
+  border-bottom: 1px solid var(--border) !important;
+  font-size: var(--text-sm) !important;
+}
+
+.ant-table-tbody>tr>td {
+  border-bottom: 1px solid var(--border) !important;
+}
+
+.ant-table-tbody>tr:nth-child(even)>td {
+  background-color: #F7F1E1;
+}
+
+.ant-table-tbody>tr:hover>td {
+  background-color: var(--muted) !important;
+}
+
+/* ---------- FOCUS (WCAG compliant) ---------- */
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+[tabindex]:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+}
+
+/* ---------- LINK ---------- */
+a {
+  color: var(--primary);
+  text-decoration: none;
+  transition: color var(--transition-fast);
+}
+
+a:hover {
+  color: var(--primary-hover);
+}
+
+/* ---------- SEPARATOR ---------- */
+.separator {
+  height: 1px;
+  background-color: var(--border);
+  border: none;
+  margin: var(--sp-4) 0;
+}
+
+/* ---------- UTILITY: SPACING ---------- */
+.gap-1 {
+  gap: var(--sp-1);
+}
+
+.gap-2 {
+  gap: var(--sp-2);
+}
+
+.gap-3 {
+  gap: var(--sp-3);
+}
+
+.gap-4 {
+  gap: var(--sp-4);
+}
+
+.gap-6 {
+  gap: var(--sp-6);
+}
+
+.gap-8 {
+  gap: var(--sp-8);
+}
+
+.p-2 {
+  padding: var(--sp-2);
+}
+
+.p-3 {
+  padding: var(--sp-3);
+}
+
+.p-4 {
+  padding: var(--sp-4);
+}
+
+.p-6 {
+  padding: var(--sp-6);
+}
+
+.p-8 {
+  padding: var(--sp-8);
+}
+
+.px-4 {
+  padding-left: var(--sp-4);
+  padding-right: var(--sp-4);
+}
+
+.py-4 {
+  padding-top: var(--sp-4);
+  padding-bottom: var(--sp-4);
+}
+
+.px-6 {
+  padding-left: var(--sp-6);
+  padding-right: var(--sp-6);
+}
+
+.py-6 {
+  padding-top: var(--sp-6);
+  padding-bottom: var(--sp-6);
+}
+
+.mb-1 {
+  margin-bottom: var(--sp-1);
+}
+
+.mb-2 {
+  margin-bottom: var(--sp-2);
+}
+
+.mb-3 {
+  margin-bottom: var(--sp-3);
+}
+
+.mb-4 {
+  margin-bottom: var(--sp-4);
+}
+
+.mb-6 {
+  margin-bottom: var(--sp-6);
+}
+
+.mb-8 {
+  margin-bottom: var(--sp-8);
+}
+
+/* ---------- UTILITY: LAYOUT ---------- */
+.flex {
+  display: flex;
+}
+
+.flex-col {
+  flex-direction: column;
+}
+
+.items-center {
+  align-items: center;
+}
+
+.justify-between {
+  justify-content: space-between;
+}
+
+.flex-wrap {
+  flex-wrap: wrap;
+}
+
+.flex-1 {
+  flex: 1;
+}
+
+/* ---------- REDUCED MOTION ---------- */
+@media (prefers-reduced-motion: reduce) {
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+/* ==========================================================================
+   CON TRỎ CHUỘT
+   Chữ tĩnh trên giao diện dùng con trỏ mũi tên thường thay vì con trỏ chữ I
+   (trông như đang soạn thảo). Chỉ ô nhập liệu mới hiện con trỏ văn bản,
+   và phần tử bấm được hiện bàn tay.
+   ========================================================================== */
+body {
+  cursor: default;
+}
+
+input,
+textarea,
+[contenteditable='true'],
+.ant-input,
+.ant-input-affix-wrapper,
+.ant-input-number-input,
+.ant-select-selection-search-input {
+  cursor: text;
+}
+
+a,
+button,
+[role='button'],
+[role='tab'],
+[role='menuitem'],
+select,
+summary,
+label[for],
+.ant-btn,
+.ant-menu-item,
+.ant-select:not(.ant-select-disabled) .ant-select-selector,
+.ant-pagination-item,
+.ant-tabs-tab {
+  cursor: pointer;
+}
+
+button:disabled,
+.ant-btn[disabled],
+.ant-select-disabled .ant-select-selector {
+  cursor: not-allowed;
+}
+
+/* ==========================================================================
+   CHUẨN HÓA HIỆU ỨNG HOVER BUTTON TRÊN TOÀN HỆ THỐNG LIBRI
+   - Nền xanh lá đậm Header: #1F3A2E (var(--primary))
+   - Chữ và Icon: Trắng (#ffffff)
+   - Viền: Xanh lá đậm (#1F3A2E)
+   - Hiệu ứng chuyển màu mượt mà: 0.25s
+   - Bảo toàn: Primary button (đã có nền xanh lá đậm sẵn),
+     Danger/Delete (đỏ), Warning (vàng/cam), Disabled (mờ, not-allowed).
+   ========================================================================== */
+
+/* Chuyển động mượt mà cho button thông thường */
+.ant-btn:not(.ant-btn-dangerous):not(:disabled):not(.ant-btn-disabled) {
+  transition: background-color 0.25s ease, border-color 0.25s ease, color 0.25s ease, box-shadow 0.25s ease !important;
+}
+
+/* Hover cho button thông thường (default, outline, ghost) */
+.ant-btn:not(.ant-btn-primary):not(.ant-btn-dangerous):not(.ant-btn-text):not(.ant-btn-link):not(:disabled):not(.ant-btn-disabled):hover {
+  background-color: var(--primary) !important;
+  color: #ffffff !important;
+  border-color: var(--primary) !important;
+}
+
+/* Đảm bảo toàn bộ chữ, icon, icon svg bên trong button chuyển sang màu trắng rõ nét */
+.ant-btn:not(.ant-btn-primary):not(.ant-btn-dangerous):not(.ant-btn-text):not(.ant-btn-link):not(:disabled):not(.ant-btn-disabled):hover *,
+.ant-btn:not(.ant-btn-primary):not(.ant-btn-dangerous):not(.ant-btn-text):not(.ant-btn-link):not(:disabled):not(.ant-btn-disabled):hover .anticon,
+.ant-btn:not(.ant-btn-primary):not(.ant-btn-dangerous):not(.ant-btn-text):not(.ant-btn-link):not(:disabled):not(.ant-btn-disabled):hover .anticon svg {
+  color: #ffffff !important;
+  fill: #ffffff !important;
+}
+
+/* Trạng thái nhấn (active) */
+.ant-btn:not(.ant-btn-primary):not(.ant-btn-dangerous):not(.ant-btn-text):not(.ant-btn-link):not(:disabled):not(.ant-btn-disabled):active {
+  background-color: #183025 !important;
+  color: #ffffff !important;
+  border-color: #183025 !important;
+}
+
+/* Bảo toàn tuyệt đối button vô hiệu hóa (disabled) */
+.ant-btn:disabled,
+.ant-btn.ant-btn-disabled,
+button:disabled {
+  pointer-events: none !important;
+  cursor: not-allowed !important;
+  opacity: 0.55 !important;
+  transition: none !important;
+}
+
+
+/* Responsive Content Layout */
+@media (max-width: 767px) {
+  .app-layout-content {
+    padding: 16px 12px !important;
+  }
+}
+
+/* ==========================================================================
+   TAG SÁCH KIỂU ẢNH BÌA & HOVER TOOLTIP (BOOK COVER CARD & TOOLTIP)
+   - Trạng thái mặc định: Chỉ hiển thị ảnh bìa trước, giữ đúng tỷ lệ 1:1.45
+   - Hover / Focus: Nổi tooltip phía trên với nền tối, tên sách in đậm, năm xuất bản, tác giả
+   - Hiệu ứng nổi nhẹ khi rê chuột (lift on hover)
+   ========================================================================== */
+
+.book-cover-card {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1 / 1.45;
+  border-radius: var(--radius);
+  overflow: hidden;
+  background-color: var(--card);
+  border: 1px solid var(--border);
+  box-shadow: 0 2px 6px rgba(42, 33, 24, 0.08);
+  cursor: pointer;
+  outline: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1),
+              box-shadow 0.25s cubic-bezier(0.4, 0, 0.2, 1),
+              border-color 0.25s ease;
+  user-select: none;
+}
+
+.book-cover-card:hover,
+.book-cover-card:focus-visible {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 22px rgba(31, 58, 46, 0.2);
+  border-color: var(--primary);
+}
+
+.book-cover-card:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+}
+
+.book-cover-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+  display: block;
+  transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.book-cover-card:hover .book-cover-img {
+  transform: scale(1.02);
+}
+
+/* Placeholder khi ảnh chưa tải hoặc không có ảnh */
+.book-cover-placeholder {
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(150deg, #1F3A2E 0%, #15271F 100%);
+  color: #FBF7EC;
+  padding: var(--sp-4);
+  display: flex;
+  flex-direction: column;
+  justifyContent: space-between;
+  align-items: center;
+  text-align: center;
+  position: relative;
+  border-left: 5px solid #B08D3C;
+}
+
+.book-cover-placeholder-category {
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #DECFAA;
+  font-family: var(--font-mono);
+  max-width: 90%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.book-cover-placeholder-center {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--sp-2);
+  padding: 0 var(--sp-1);
+}
+
+.book-cover-placeholder-icon {
+  font-size: 32px;
+  color: #B08D3C;
+  opacity: 0.9;
+}
+
+.book-cover-placeholder-title {
+  font-family: var(--font-serif);
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.35;
+  color: #FFFFFF;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.book-cover-placeholder-author {
+  font-size: 11.5px;
+  color: rgba(251, 247, 236, 0.85);
+  font-style: italic;
+  max-width: 90%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Tooltip giao diện đen/xanh tối chuẩn LIBRI */
+.book-cover-tooltip-overlay .ant-tooltip-inner {
+  background-color: #183025 !important;
+  border-radius: 6px !important;
+  padding: 8px 12px !important;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.3) !important;
+  border: 1px solid rgba(222, 207, 170, 0.25) !important;
+  max-width: 250px !important;
+  text-align: center !important;
+}
+
+.book-cover-tooltip-overlay .ant-tooltip-arrow::before {
+  background: #183025 !important;
+}
+
+.book-card-tooltip {
+  text-align: center;
+  padding: 1px 2px;
+}
+
+.book-card-tooltip-title {
+  font-weight: 700;
+  font-size: 13.5px;
+  color: #FFFFFF;
+  line-height: 1.35;
+  word-break: break-word;
+  font-family: var(--font-sans);
+}
+
+.book-card-tooltip-author {
+  font-size: 12px;
+  color: rgba(251, 247, 236, 0.85);
+  margin-top: 3px;
+  line-height: 1.3;
+  word-break: break-word;
+  font-family: var(--font-sans);
+}
