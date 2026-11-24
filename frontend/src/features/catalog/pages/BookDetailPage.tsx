@@ -1,24 +1,26 @@
 import React, { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { Card, Row, Col, Table, Tag, Descriptions, Alert } from 'antd'
+import { Card, Row, Col, Table, Tag, Descriptions, Alert, Button } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
 import { catalogApi } from '../api'
 import type { BookDto, BookCopyDto } from '../types'
 import { BookDescription } from '../components/BookDescription'
 import { API_BASE_URL } from '@/shared/api/client'
-import { ReserveButton } from '@/features/circulation'
+import { ReserveButton, CirculationRestrictionBanner } from '@/features/circulation'
+import { useAuth } from '@/features/identity'
 import { CatalogCode } from '@/shared/components/CatalogCode'
 import { SpineTag } from '@/shared/components/SpineTag'
 import { PageHeader } from '@/shared/components/PageHeader'
 import { LoadingState } from '@/shared/components/LoadingState'
 import { ErrorState } from '@/shared/components/ErrorState'
 import { useStableCallback, useRequestGuard } from '@/shared/hooks'
-import { monoStyle, primaryTagStyle } from '@/shared/styles/ui'
+import { monoStyle, primaryTagStyle, radiusStyle } from '@/shared/styles/ui'
 import { getErrorMessage } from '@/shared/utils/format'
 
 export const BookDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
+  const { user } = useAuth()
   const [book, setBook] = useState<BookDto | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -98,21 +100,12 @@ export const BookDetailPage: React.FC = () => {
           { title: book.title },
         ]}
         extra={
-          <button
-            type="button"
+          <Button
             onClick={() => navigate('/books')}
-            style={{
-              background: 'var(--card)',
-              border: '1px solid var(--border-strong)',
-              color: 'var(--foreground)',
-              padding: '6px var(--sp-4)',
-              borderRadius: 'var(--radius)',
-              cursor: 'pointer',
-              fontWeight: 500,
-            }}
+            style={radiusStyle}
           >
             Quay lại mục lục
-          </button>
+          </Button>
         }
       />
 
@@ -270,6 +263,12 @@ export const BookDetailPage: React.FC = () => {
             </p>
 
             <div style={{ textAlign: 'center', padding: 'var(--sp-2) 0' }}>
+              {/* Banner cảnh báo hạn chế lưu thông — hiện ngay trên nút Đặt trước */}
+              {user?.role === 'Reader' && (
+                <div style={{ textAlign: 'left', marginBottom: 'var(--sp-3)' }}>
+                  <CirculationRestrictionBanner />
+                </div>
+              )}
               <ReserveButton
                 bookId={book.id}
                 bookTitle={book.title}
