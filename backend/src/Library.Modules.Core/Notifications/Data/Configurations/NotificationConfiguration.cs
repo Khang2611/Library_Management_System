@@ -12,7 +12,7 @@ public class NotificationConfiguration : IEntityTypeConfiguration<Notification>
         builder.HasKey(n => n.Id);
 
         builder.Property(n => n.Title).HasMaxLength(200).IsRequired();
-        builder.Property(n => n.Content).HasColumnType("nvarchar(max)").IsRequired();
+        builder.Property(n => n.Content).IsRequired();
         builder.Property(n => n.IsRead).HasDefaultValue(false);
         builder.Property(n => n.CreatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
 
