@@ -16,7 +16,7 @@ public record EmailSendResult(
 )
 {
     public static EmailSendResult Ok() => new(true);
+
     public static EmailSendResult Failed(string errorMessage, EmailFailureType failureType) =>
         new(false, errorMessage, failureType);
 }
-

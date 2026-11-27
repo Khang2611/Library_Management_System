@@ -1,7 +1,7 @@
 using System.Data.Common;
+using Npgsql;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
-using Npgsql;
 
 namespace Library.Modules.Core.Shared.Persistence;
 
@@ -32,3 +32,4 @@ public static class PersistenceExtensions
         return services;
     }
 }
+

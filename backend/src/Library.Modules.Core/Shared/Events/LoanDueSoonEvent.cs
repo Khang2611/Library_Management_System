@@ -2,5 +2,14 @@ using MediatR;
 
 namespace Library.Modules.Core.Shared.Events;
 
-public sealed record LoanDueSoonEvent(long LoanSlipDetailId, int AccountId, long BookCopyId, DateOnly DueDate) : INotification;
+/// <summary>
+/// Sự kiện phát ra khi phát hiện sách mượn sắp đến hạn trả trong khoảng 3 đến 5 ngày tới.
+/// </summary>
+public record LoanDueSoonEvent(
+    long LoanSlipDetailId,
+    int AccountId,
+    int BookCopyId,
+    DateOnly DueDate,
+    int DaysUntilDue
+) : INotification;
 

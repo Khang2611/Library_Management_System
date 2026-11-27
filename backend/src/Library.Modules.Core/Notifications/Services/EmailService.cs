@@ -17,8 +17,14 @@ public sealed class EmailService : IEmailService
         _logger = logger;
     }
 
+    /// <summary>
+    /// Gửi email tổng quát qua giao thức SMTP.
+    /// Sử dụng cơ chế xác thực chứng chỉ TLS mặc định của .NET / MailKit.
+    /// Phân biệt rõ lỗi cấu hình, lỗi kết nối, lỗi xác thực và lỗi gửi thư.
+    /// </summary>
     public async Task<EmailSendResult> SendEmailAsync(string toEmail, string subject, string htmlBody, CancellationToken ct = default)
     {
+        // Ghi log trạng thái chuẩn bị gửi (tuyệt đối không ghi thông tin nhạy cảm / OTP)
         _logger.LogInformation("Preparing to send email to {Email} with subject '{Subject}'", toEmail, subject);
 
         var smtpHost = _cfg["Smtp:Host"] ?? Environment.GetEnvironmentVariable("SMTP_HOST");
@@ -46,10 +52,18 @@ public sealed class EmailService : IEmailService
             message.To.Add(new MailboxAddress(toEmail, toEmail));
             message.Subject = subject;
 
-            var bodyBuilder = new BodyBuilder { HtmlBody = htmlBody };
+            var bodyBuilder = new BodyBuilder
+            {
+                HtmlBody = htmlBody
+            };
             message.Body = bodyBuilder.ToMessageBody();
 
             using var client = new SmtpClient();
+
+            // SỬ DỤNG CƠ CHẾ XÁC THỰC CHỨNG CHỈ TLS MẶC ĐỊNH CỦA MAILKIT / .NET
+            // Loại bỏ hoàn toàn callback chấp nhận mọi chứng chỉ để đảm bảo an toàn kết nối,
+            // không bỏ qua lỗi chứng chỉ không hợp lệ, hết hạn hoặc không khớp hostname.
+
             var secureSocketOptions = port switch
             {
                 465 => SecureSocketOptions.SslOnConnect,
@@ -60,6 +74,12 @@ public sealed class EmailService : IEmailService
             try
             {
                 await client.ConnectAsync(smtpHost, port, secureSocketOptions, ct);
+            }
+            catch (SslHandshakeException sslEx)
+            {
+                var errDetail = sslEx.InnerException != null ? $"{sslEx.Message} -> {sslEx.InnerException.Message}" : sslEx.Message;
+                _logger.LogError(sslEx, "TLS certificate validation failed when connecting to SMTP host {Host}:{Port}. Detail: {Detail}", smtpHost, port, errDetail);
+                return EmailSendResult.Failed($"Lỗi bảo mật TLS: Chứng chỉ của máy chủ thư ({smtpHost}:{port}) không hợp lệ hoặc không an toàn ({errDetail}).", EmailFailureType.ConnectionFailed);
             }
             catch (Exception ex)
             {
@@ -106,18 +126,39 @@ public sealed class EmailService : IEmailService
         }
     }
 
+    /// <summary>
+    /// Gửi email đặt lại mật khẩu kèm mã OTP và liên kết đặt lại.
+    /// Không ghi OTP hoặc liên kết chứa token bí mật vào log / console.
+    /// </summary>
     public async Task<EmailSendResult> SendPasswordResetEmailAsync(string toEmail, string resetToken, string otpCode, CancellationToken ct = default)
     {
-        var frontendUrl = _cfg["FrontendUrl"] ?? Environment.GetEnvironmentVariable("FRONTEND_URL") ?? "https://libri.id.vn";
+        // Ghi log nghiệp vụ KHÔNG chứa OTP hay liên kết chứa mã bí mật
+        _logger.LogInformation("Password reset email dispatch requested for {Email}", toEmail);
+
+        var frontendUrl = _cfg["FrontendUrl"]
+            ?? _cfg["FRONTEND_URL"]
+            ?? _cfg["AppUrl"]
+            ?? Environment.GetEnvironmentVariable("FRONTEND_URL")
+            ?? "https://libri.id.vn";
+
         var resetLink = $"{frontendUrl.TrimEnd('/')}/reset-password?email={Uri.EscapeDataString(toEmail)}&otp={Uri.EscapeDataString(otpCode)}";
+
         var htmlBody = LibriEmailTemplates.BuildPasswordResetEmail(toEmail, otpCode, resetLink);
+
         return await SendEmailAsync(toEmail, "[Libri] Đặt lại mật khẩu Libri", htmlBody, ct);
     }
 
+    /// <summary>
+    /// Gửi email xác thực đăng ký tài khoản kèm mã OTP 6 chữ số.
+    /// Không ghi OTP vào log / console.
+    /// </summary>
     public async Task<EmailSendResult> SendRegistrationOtpEmailAsync(string toEmail, string otpCode, string? fullName = null, CancellationToken ct = default)
     {
+        // Ghi log nghiệp vụ KHÔNG chứa OTP
+        _logger.LogInformation("Registration verification OTP email dispatch requested for {Email}", toEmail);
+
         var htmlBody = LibriEmailTemplates.BuildRegistrationOtpEmail(toEmail, otpCode, fullName);
+
         return await SendEmailAsync(toEmail, "[Libri] Xác thực tài khoản Libri", htmlBody, ct);
     }
 }
-

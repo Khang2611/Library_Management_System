@@ -1,7 +1,7 @@
 namespace Library.Modules.Core.Notifications.Services;
 
 /// <summary>
-/// Dịch vụ gửi email hạ tầng của hệ thống Libri.
+/// Dịch vụ gửi email hạ tầng của hệ thống Libri (phục vụ OTP xác thực, thông báo đặt trước, nhắc hạn, quá hạn, khóa tài khoản).
 /// </summary>
 public interface IEmailService
 {
