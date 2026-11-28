@@ -33,6 +33,14 @@ public class BookConfiguration : IEntityTypeConfiguration<Book>
 
         builder.HasIndex(b => b.Isbn).IsUnique().HasFilter("\"Isbn\" IS NOT NULL");
 
+        builder.HasGeneratedTsVectorColumn(
+            b => b.SearchVector!,
+            "simple",
+            b => new { b.Title, b.Description });
+
+        builder.HasIndex(b => b.SearchVector)
+            .HasMethod("GIN");
+
         // Check constraints
         builder.ToTable("Books", t =>
         {
