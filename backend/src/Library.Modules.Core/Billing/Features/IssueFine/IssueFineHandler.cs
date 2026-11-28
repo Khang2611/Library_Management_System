@@ -25,7 +25,7 @@ public sealed class IssueFineHandler : IRequestHandler<IssueFineRequest, ApiResp
         var val = await _validator.ValidateAsync(request, ct);
         if (!val.IsValid) return ApiResponse<long>.Fail(string.Join("; ", val.Errors.Select(e => e.ErrorMessage)));
 
-        // ── THÊM MỚI: Chống tạo trùng phiếu phạt cho cùng một sự cố ────────
+        // ── Chống tạo trùng phiếu phạt cho cùng một sự cố (Idempotency) ────────
         if (request.IncidentId.HasValue && request.IncidentId.Value > 0)
         {
             var existingFine = await _db.Fines
@@ -36,7 +36,7 @@ public sealed class IssueFineHandler : IRequestHandler<IssueFineRequest, ApiResp
             }
         }
 
-        // ── THÊM MỚI: Chống tạo trùng phiếu phạt quá hạn cho cùng một lượt mượn ──
+        // ── Chống tạo trùng phiếu phạt quá hạn cho cùng một lượt mượn ─────────
         if (request.LoanSlipDetailId.HasValue && request.LoanSlipDetailId.Value > 0 && request.FineType == FineType.Overdue)
         {
             var existingOverdueFine = await _db.Fines

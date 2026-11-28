@@ -33,6 +33,14 @@ public sealed class ReportIncidentHandler : IRequestHandler<ReportIncidentReques
             .FirstOrDefaultAsync(d => d.Id == request.LoanSlipDetailId, ct);
         if (detail == null) return ApiResponse<long>.Fail("Chi tiết phiếu mượn không tồn tại.");
 
+        if (detail.Status != LoanDetailStatus.Borrowing)
+            return ApiResponse<long>.Fail("Bản sao sách này không ở trạng thái đang mượn (đã hoàn trả hoặc đã lập biên bản sự cố trước đó).");
+
+        var hasExistingIncident = await _db.Incidents
+            .AnyAsync(i => i.LoanSlipDetailId == request.LoanSlipDetailId && i.Status != IncidentStatus.Cancelled, ct);
+        if (hasExistingIncident)
+            return ApiResponse<long>.Fail("Chi tiết phiếu mượn này đã được lập biên bản sự cố trước đó.");
+
         var incident = new Incident
         {
             LoanSlipDetailId = request.LoanSlipDetailId,
@@ -54,17 +62,20 @@ public sealed class ReportIncidentHandler : IRequestHandler<ReportIncidentReques
 
         await _sender.Send(new SetCopyStatusCommand(detail.BookCopyId, null, newStatus, newCondition), ct);
 
-        if (request.IncidentType == IncidentType.Lost)
-        {
-            detail.Status = LoanDetailStatus.Lost;
+        detail.Status = request.IncidentType == IncidentType.Lost
+            ? LoanDetailStatus.Lost
+            : LoanDetailStatus.Damaged;
+        detail.ActualReturnDate = VietnamTime.Today();
+        detail.UpdatedAt = DateTime.UtcNow;
+        detail.UpdatedBy = request.LibrarianId;
 
-            var slip = await _db.LoanSlips.Include(l => l.Details)
-                .FirstOrDefaultAsync(l => l.Id == detail.LoanSlipId, ct);
-            if (slip != null && slip.Details.All(d => d.Status != LoanDetailStatus.Borrowing))
-            {
-                slip.Status = LoanStatus.Returned;
-                slip.UpdatedAt = DateTime.UtcNow;
-            }
+        var slip = await _db.LoanSlips.Include(l => l.Details)
+            .FirstOrDefaultAsync(l => l.Id == detail.LoanSlipId, ct);
+        if (slip != null && slip.Details.All(d => d.Status != LoanDetailStatus.Borrowing))
+        {
+            slip.Status = LoanStatus.Returned;
+            slip.UpdatedAt = DateTime.UtcNow;
+            slip.UpdatedBy = request.LibrarianId;
         }
 
         await _db.SaveChangesAsync(ct);
