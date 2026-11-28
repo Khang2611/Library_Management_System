@@ -7,7 +7,6 @@ COPY LibrarySystem.slnx ./
 COPY src/Library.Web/Library.Web.csproj                             src/Library.Web/
 COPY src/Library.Modules.Core/Library.Modules.Core.csproj           src/Library.Modules.Core/
 COPY src/Library.Modules.AI/Library.Modules.AI.csproj               src/Library.Modules.AI/
-COPY src/Library.Modules.ZeroTrust/Library.Modules.ZeroTrust.csproj src/Library.Modules.ZeroTrust/
 
 # Restore tat ca projects qua solution
 RUN dotnet restore LibrarySystem.slnx
