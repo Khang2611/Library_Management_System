@@ -2,7 +2,6 @@
   <Folder Name="/src/">
     <Project Path="src/Library.Modules.AI/Library.Modules.AI.csproj" />
     <Project Path="src/Library.Modules.Core/Library.Modules.Core.csproj" />
-    <Project Path="src/Library.Modules.ZeroTrust/Library.Modules.ZeroTrust.csproj" />
     <Project Path="src/Library.Web/Library.Web.csproj" />
   </Folder>
 </Solution>
